@@ -17,7 +17,7 @@ from database import (
 def create_app():
     # Создаем приложение Flask
     app = Flask(__name__)
-    # Ключ для сессий и flash-сообщений (в реальности возьмите из переменных окружения)
+    # Ключ для сессий и flash-сообщений
     app.config["SECRET_KEY"] = os.environ.get("FLASK_SECRET_KEY", "dev-secret-key")
 
     # Создаем таблицы (если их еще нет)
@@ -183,7 +183,7 @@ def create_app():
     return app
 
 
-# Создаем приложение (так проще запускать через python app.py)
+# Создаем приложение
 app = create_app()
 
 

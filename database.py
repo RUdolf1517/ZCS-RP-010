@@ -1,8 +1,3 @@
-"""
-Простой модуль работы с базой данных.
-Тут мы настраиваем SQLite и описываем таблицу заявок.
-Комментарии написаны максимально просто.
-"""
 
 from dataclasses import dataclass
 
@@ -25,7 +20,7 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=get_engine()
 
 
 class Registration(Base):
-    """Модель заявки на мероприятие."""
+    
 
     __tablename__ = "registrations"
 
