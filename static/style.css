@@ -6,6 +6,9 @@ body { background: #f5f6fb; }
 .app-header__inner { display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0; }
 .app-header__brand { color: #fff; text-decoration: none; font-weight: 600; }
 .app-header__admin { color: #eef2ff; text-decoration: none; }
+.app-footer { background: #f5f6fb; color: #000000; margin-top: 1.5rem; text-align: center;}
+.app-footer__inner { align-items: center; padding: 0.75rem 0; }
+.app-footer__copyright { color: #000000; text-decoration: none; }
 
 /* Page wrapper */
 .page { padding-bottom: 2rem; }
