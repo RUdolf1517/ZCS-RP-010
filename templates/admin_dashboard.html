@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+{% block title %}Админ — Ученики{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h4 mb-0">Ученики</h1>
+  <div class="d-flex gap-2">
+    <a class="btn btn-primary btn-sm" href="{{ url_for('admin_student_new') }}">Новая карточка</a>
+    <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('admin_logout') }}">Выйти</a>
+  </div>
+ </div>
+
+<form method="get" class="row g-2 mb-3 card card-body">
+  <div class="col-sm-6 col-md-4 col-lg-3">
+    <label class="form-label">Поиск (ФИО)</label>
+    <input class="form-control" type="text" name="q" value="{{ q }}" placeholder="например Иванов">
+  </div>
+  <div class="col-sm-6 col-md-4 col-lg-3">
+    <label class="form-label">Класс</label>
+    <select class="form-select" name="class">
+      <option value="">Все</option>
+      {% for c in classes %}
+        <option value="{{ c }}" {% if class_name==c %}selected{% endif %}>{{ c }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-sm-6 col-md-4 col-lg-3">
+    <label class="form-label">Сортировка</label>
+    <select class="form-select" name="order">
+      <option value="">Новые сверху</option>
+      <option value="class" {% if order=='class' %}selected{% endif %}>По классу</option>
+      <option value="teacher" {% if order=='teacher' %}selected{% endif %}>По кл. руководителю</option>
+    </select>
+  </div>
+  <div class="col-sm-6 col-md-12 col-lg-3 d-grid">
+    <button class="btn btn-primary" type="submit">Применить</button>
+  </div>
+ </form>
+
+<div class="table-responsive card">
+  <table class="table table-sm mb-0">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>ФИО</th>
+        <th>Класс</th>
+        <th>Кл. руководитель</th>
+        <th>Достижения</th>
+        <th>Создано</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for s in students %}
+      <tr>
+        <td>{{ s.id }}</td>
+        <td>
+          {{ s.full_name }}
+          <div class="small"><a href="{{ url_for('admin_student_edit', student_id=s.id) }}">Редактировать</a></div>
+        </td>
+        <td>{{ s.class_name }}</td>
+        <td>{{ s.class_teacher }}</td>
+        <td>{{ s.achievements or '' }}</td>
+        <td>{{ s.created_at.strftime('%Y-%m-%d %H:%M') if s.created_at else '' }}</td>
+      </tr>
+      {% else %}
+      <tr>
+        <td colspan="6" class="text-center text-muted">Нет записей</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+ </div>
+{% endblock %}
+
+

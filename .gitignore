@@ -1,0 +1,41 @@
+# OS
+.DS_Store
+
+# Python bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+
+# Local environment/config
+.env
+.env.*
+*.env
+
+# SQLite / local DB
+app.db
+*.sqlite3
+*.db
+
+# Build / Dist
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Testing
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# Editor/IDE
+.vscode/
+.idea/
+
+# Flask instance folder (if used)
+instance/

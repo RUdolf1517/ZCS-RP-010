@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% block title %}Вход администратора{% endblock %}
+{% block content %}
+{# Простой логин для доступа в админ-панель #}
+<div class="row justify-content-center">
+  <div class="col-md-6 col-lg-4">
+    <h1 class="mb-4 text-center">Вход администратора</h1>
+    <form method="post" class="card p-4 shadow-sm">
+      <div class="mb-3">
+        <label class="form-label">Логин</label>
+        <input type="text" class="form-control" name="username" required>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Пароль</label>
+        <input type="password" class="form-control" name="password" required>
+      </div>
+      <div class="d-grid">
+        <button class="btn btn-primary" type="submit">Войти</button>
+      </div>
+    </form>
+  </div>
+ </div>
+{% endblock %}
+
+

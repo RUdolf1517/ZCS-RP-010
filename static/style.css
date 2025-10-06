@@ -1,0 +1,17 @@
+/* Простой, но аккуратный стиль (как сделал бы джун) */
+body { background: #f5f6fb; }
+
+.app-header { background: linear-gradient(90deg, #5b7fff, #7aa8ff); color: #fff; }
+.app-header .brand-title { color: #fff; text-decoration: none; font-weight: 600; }
+.app-header a { color: #eef2ff; }
+
+.card { border: 1px solid #e7e9f2; border-radius: 10px; }
+.form-card { max-width: 900px; margin: 0 auto; }
+
+.btn-primary { background: #5b7fff; border-color: #5b7fff; }
+.btn-primary:hover { background: #4c71ff; border-color: #4c71ff; }
+
+table thead th { font-weight: 600; background: #f0f3ff; }
+table tbody tr:hover { background: #f9fbff; }
+
+

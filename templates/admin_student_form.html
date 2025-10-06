@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% block title %}Новая карточка ученика{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-8 col-xl-7">
+    <div class="card shadow-sm">
+      <div class="card-body p-4">
+        <h1 class="h4 mb-3">{% if student %}Редактирование карточки{% else %}Новая карточка ученика{% endif %}</h1>
+
+        {% if error_message %}
+          <div class="alert alert-danger mb-3">{{ error_message }}</div>
+        {% endif %}
+
+        <form method="post" class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label">ФИО *</label>
+            <input type="text" name="full_name" class="form-control" value="{{ student.full_name if student }}" required>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Класс *</label>
+            <input type="text" name="class_name" class="form-control" placeholder="7А" value="{{ student.class_name if student }}" required>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Кл. руководитель *</label>
+            <input type="text" name="class_teacher" class="form-control" value="{{ student.class_teacher if student }}" required>
+          </div>
+          <div class="col-12">
+            <label class="form-label">Достижения</label>
+            <textarea name="achievements" class="form-control" rows="4" placeholder="Победитель олимпиады…">{{ student.achievements if student }}</textarea>
+          </div>
+          <div class="col-12 d-flex gap-2">
+            <button class="btn btn-primary" type="submit">Сохранить</button>
+            <a class="btn btn-outline-secondary" href="{{ url_for('admin_dashboard') }}">Отмена</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+ </div>
+{% endblock %}
+
+
