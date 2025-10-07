@@ -2,6 +2,7 @@
 
 import os
 from flask import Flask, redirect, render_template, request, session, url_for
+from sqlalchemy import delete
 
 from database import (
     Registration,
@@ -180,6 +181,22 @@ def create_app():
 
         return render_template("admin_student_form.html", student=student)
 
+    # Удаление карточки ученика (админ)
+    @app.route("/admin/students/<int:student_id>/delete", methods=["POST"])
+    def admin_student_delete(student_id: int):
+        redirect_resp = require_admin()
+        if redirect_resp:
+            return redirect_resp
+
+        with next(get_db_session()) as db:
+            student = db.get(Student, student_id)
+            if student:
+                db.delete(student)
+                db.commit()
+        return redirect(url_for("admin_dashboard"))
+
+    
+    
     return app
 
 
