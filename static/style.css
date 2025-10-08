@@ -35,8 +35,8 @@ body { background: #f5f6fb; }
 .btn-primary:hover { background: #4c71ff; border-color: #4c71ff; }
 .btn-secondary { background: #e9ecef; border-color: #e9ecef; color: #000; }
 .btn-secondary:hover { background: #000000; border-color: #dde1e6; }
-.btn-danger { background: #e85757; border-color: #e85757; }
-.btn-danger:hover { background: #d94a4a; border-color: #d94a4a; }
+.btn-success { background: #28a745; border-color: #28a745; }
+.btn-success:hover { background: #218838; border-color: #218838; }
 .btn-small { padding: 0.25rem 0.5rem; font-size: 0.875rem; }
 
 /* Titles */

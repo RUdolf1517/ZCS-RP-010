@@ -1,16 +1,16 @@
-
-
 import os
-from flask import Flask, redirect, render_template, request, session, url_for
-from sqlalchemy import delete
+import io
+from datetime import datetime
+from flask import Flask, redirect, render_template, request, session, url_for, send_file
+from sqlalchemy import delete, select
+from openpyxl import Workbook
+from openpyxl.styles import Font, PatternFill, Alignment
 
 from database import (
-    Registration,
     Student,
     get_admin_user,
     get_db_session,
     init_db,
-    search_registrations,
     search_students,
 )
 
@@ -45,7 +45,6 @@ def create_app():
             # Берем дефолтного пользователя (можно переопределить через переменные окружения ниже)
             admin = get_admin_user()
 
-            
             user = "admin"
             passw = "12345"
             
@@ -195,8 +194,65 @@ def create_app():
                 db.commit()
         return redirect(url_for("admin_dashboard"))
 
-    
-    
+    # Экспорт карточек учеников в Excel
+    @app.route("/admin/export/excel")
+    def admin_export_excel():
+        redirect_resp = require_admin()
+        if redirect_resp:
+            return redirect_resp
+
+        with next(get_db_session()) as db:
+            students = db.execute(select(Student).order_by(Student.class_name.asc(), Student.full_name.asc())).scalars().all()
+
+        # Создаем Excel файл
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Карточки учеников"
+
+        # Заголовки
+        headers = ["ID", "ФИО", "Класс", "Кл. руководитель", "Достижения", "Дата создания"]
+        for col, header in enumerate(headers, 1):
+            cell = ws.cell(row=1, column=col, value=header)
+            cell.font = Font(bold=True)
+            cell.fill = PatternFill(start_color="CCCCCC", end_color="CCCCCC", fill_type="solid")
+            cell.alignment = Alignment(horizontal="center")
+
+        # Данные
+        for row, student in enumerate(students, 2):
+            ws.cell(row=row, column=1, value=student.id)
+            ws.cell(row=row, column=2, value=student.full_name)
+            ws.cell(row=row, column=3, value=student.class_name)
+            ws.cell(row=row, column=4, value=student.class_teacher)
+            ws.cell(row=row, column=5, value=student.achievements or "")
+            ws.cell(row=row, column=6, value=student.created_at.strftime("%Y-%m-%d %H:%M") if student.created_at else "")
+
+        # Автоподбор ширины колонок
+        for column in ws.columns:
+            max_length = 0
+            column_letter = column[0].column_letter
+            for cell in column:
+                try:
+                    if len(str(cell.value)) > max_length:
+                        max_length = len(str(cell.value))
+                except:
+                    pass
+            adjusted_width = min(max_length + 2, 50)
+            ws.column_dimensions[column_letter].width = adjusted_width
+
+        # Сохраняем в память
+        output = io.BytesIO()
+        wb.save(output)
+        output.seek(0)
+
+        # Возвращаем файл для скачивания
+        filename = f"ученики_{datetime.now().strftime('%Y%m%d_%H%M')}.xlsx"
+        return send_file(
+            output,
+            as_attachment=True,
+            download_name=filename,
+            mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+
     return app
 
 
