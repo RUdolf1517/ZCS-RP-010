@@ -71,14 +71,14 @@ def create_app():
     def require_admin():
         if not session.get("admin_authenticated"):
             return redirect(url_for("admin_login"))
-        return None
+        return True
 
     # Админ-панель: список учеников + поиск/фильтр/сортировки
     @app.route("/admin", methods=["GET"])
     def admin_dashboard():
-        redirect_resp = require_admin()
-        if redirect_resp:
-            return redirect_resp
+        auth_result = require_admin()
+        if auth_result != True:
+            return auth_result
 
         # Параметры из строки запроса
         q = request.args.get("q")  # поиск по ФИО
@@ -118,9 +118,9 @@ def create_app():
     # Создание карточки ученика (админ)
     @app.route("/admin/students/new", methods=["GET", "POST"])
     def admin_student_new():
-        redirect_resp = require_admin()
-        if redirect_resp:
-            return redirect_resp
+        auth_result = require_admin()
+        if auth_result != True:
+            return auth_result
 
         if request.method == "POST":
             full_name = request.form.get("full_name", "").strip()
@@ -148,9 +148,9 @@ def create_app():
     # Редактирование карточки ученика (админ)
     @app.route("/admin/students/<int:student_id>/edit", methods=["GET", "POST"])
     def admin_student_edit(student_id: int):
-        redirect_resp = require_admin()
-        if redirect_resp:
-            return redirect_resp
+        auth_result = require_admin()
+        if auth_result != True:
+            return auth_result
 
         with next(get_db_session()) as db:
             student = db.get(Student, student_id)
@@ -183,9 +183,9 @@ def create_app():
     # Удаление карточки ученика (админ)
     @app.route("/admin/students/<int:student_id>/delete", methods=["POST"])
     def admin_student_delete(student_id: int):
-        redirect_resp = require_admin()
-        if redirect_resp:
-            return redirect_resp
+        auth_result = require_admin()
+        if auth_result != True:
+            return auth_result
 
         with next(get_db_session()) as db:
             student = db.get(Student, student_id)
@@ -197,9 +197,9 @@ def create_app():
     # Экспорт карточек учеников в Excel
     @app.route("/admin/export/excel")
     def admin_export_excel():
-        redirect_resp = require_admin()
-        if redirect_resp:
-            return redirect_resp
+        auth_result = require_admin()
+        if auth_result != True:
+            return auth_result
 
         with next(get_db_session()) as db:
             students = db.execute(select(Student).order_by(Student.class_name.asc(), Student.full_name.asc())).scalars().all()
