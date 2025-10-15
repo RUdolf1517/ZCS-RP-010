@@ -57,7 +57,9 @@
           <div class="student-name">{{ s.full_name }}</div>
           <div class="row-actions">
             <a class="btn btn-small btn-secondary" href="{{ url_for('admin_student_edit', student_id=s.id) }}">Редактировать</a>
-            <button class="btn btn-small btn-danger" formmethod="post" formaction="{{ url_for('admin_student_delete', student_id=s.id) }}" onclick="return confirm('Удалить карточку {{ s.full_name }}?');">Удалить</button>
+            <form method="post" action="{{ url_for('admin_student_delete', student_id=s.id) }}" style="display:inline" onsubmit="return confirm('Удалить карточку {{ s.full_name }}?');">
+              <button type="submit" class="btn btn-small btn-danger">Удалить</button>
+            </form>
           </div>
         </td>
         <td>{{ s.class_name }}</td>
