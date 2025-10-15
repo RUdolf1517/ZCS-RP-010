@@ -26,7 +26,11 @@
           <div class="student-card__name">{{ s.full_name }}</div>
           <div class="student-card__teacher">Кл. руководитель: {{ s.class_teacher }}</div>
           {% if s.achievements %}
-            <div class="student-card__achievements">{{ s.achievements }}</div>
+            <ul class="student-card__achievements mb-0 ps-3">
+              {% for line in s.achievements.split('\n') %}
+                {% if line.strip() %}<li>{{ line }}</li>{% endif %}
+              {% endfor %}
+            </ul>
           {% endif %}
         </div>
       {% else %}

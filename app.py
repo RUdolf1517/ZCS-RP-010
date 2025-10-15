@@ -126,7 +126,9 @@ def create_app():
             full_name = request.form.get("full_name", "").strip()
             class_name = request.form.get("class_name", "").strip()
             class_teacher = request.form.get("class_teacher", "").strip()
-            achievements = request.form.get("achievements", "").strip()
+            # Собираем неограниченное число достижений из массива achievements[]
+            achievements_items = request.form.getlist("achievements[]")
+            achievements = "\n".join([a.strip() for a in achievements_items if a and a.strip()])
 
             if not (full_name and class_name and class_teacher):
                 return render_template("admin_student_form.html", error_message="Заполните все обязательные поля.")
@@ -161,7 +163,8 @@ def create_app():
                 full_name = request.form.get("full_name", "").strip()
                 class_name = request.form.get("class_name", "").strip()
                 class_teacher = request.form.get("class_teacher", "").strip()
-                achievements = request.form.get("achievements", "").strip()
+                achievements_items = request.form.getlist("achievements[]")
+                achievements = "\n".join([a.strip() for a in achievements_items if a and a.strip()])
 
                 if not (full_name and class_name and class_teacher):
                     return render_template(
@@ -223,7 +226,9 @@ def create_app():
             ws.cell(row=row, column=2, value=student.full_name)
             ws.cell(row=row, column=3, value=student.class_name)
             ws.cell(row=row, column=4, value=student.class_teacher)
-            ws.cell(row=row, column=5, value=student.achievements or "")
+            ach_cell = ws.cell(row=row, column=5, value=student.achievements or "")
+            # Включаем перенос текста внутри ячейки
+            ach_cell.alignment = Alignment(wrap_text=True, vertical="top")
             ws.cell(row=row, column=6, value=student.created_at.strftime("%Y-%m-%d %H:%M") if student.created_at else "")
 
         # Автоподбор ширины колонок
@@ -238,6 +243,10 @@ def create_app():
                     pass
             adjusted_width = min(max_length + 2, 50)
             ws.column_dimensions[column_letter].width = adjusted_width
+
+        # Увеличим высоту строк, чтобы переносы отображались лучше
+        for row in range(2, ws.max_row + 1):
+            ws.row_dimensions[row].height = 15
 
         # Сохраняем в память
         output = io.BytesIO()

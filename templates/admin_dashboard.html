@@ -62,7 +62,15 @@
         </td>
         <td>{{ s.class_name }}</td>
         <td>{{ s.class_teacher }}</td>
-        <td>{{ s.achievements or '' }}</td>
+        <td>
+          {% if s.achievements %}
+            <ul class="mb-0 ps-3">
+              {% for line in s.achievements.split('\n') %}
+                {% if line.strip() %}<li>{{ line }}</li>{% endif %}
+              {% endfor %}
+            </ul>
+          {% endif %}
+        </td>
         <td>{{ s.created_at.strftime('%Y-%m-%d %H:%M') if s.created_at else '' }}</td>
       </tr>
       {% else %}

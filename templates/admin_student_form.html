@@ -26,8 +26,43 @@
           </div>
           <div class="form-group form-group--full">
             <label class="form-label">Достижения</label>
-            <textarea name="achievements" class="form-input" rows="4" placeholder="Победитель олимпиады…">{{ student.achievements if student }}</textarea>
+            {% set ach_lines = (student.achievements.split('\n') if student and student.achievements else []) %}
+            <div id="achievements-list">
+              {% if ach_lines and ach_lines|length > 0 %}
+                {% for line in ach_lines %}
+                  <div class="d-flex gap-2 mb-2 achievement-item">
+                    <input type="text" name="achievements[]" class="form-input flex-grow-1" placeholder="Например: Победитель олимпиады…" value="{{ line }}">
+                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeAchievement(this)">Удалить</button>
+                  </div>
+                {% endfor %}
+              {% else %}
+                  <div class="d-flex gap-2 mb-2 achievement-item">
+                    <input type="text" name="achievements[]" class="form-input flex-grow-1" placeholder="Например: Победитель олимпиады…">
+                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeAchievement(this)">Удалить</button>
+                  </div>
+              {% endif %}
+            </div>
+            <button type="button" class="btn btn-outline-primary btn-sm" onclick="addAchievement()">Добавить достижение</button>
           </div>
+          <script>
+          function addAchievement() {
+            const container = document.getElementById('achievements-list');
+            const item = document.createElement('div');
+            item.className = 'd-flex gap-2 mb-2 achievement-item';
+            item.innerHTML = '<input type="text" name="achievements[]" class="form-input flex-grow-1" placeholder="Например: Победитель олимпиады…">' +
+                             '<button type="button" class="btn btn-outline-danger btn-sm" onclick="removeAchievement(this)">Удалить</button>';
+            container.appendChild(item);
+          }
+          function removeAchievement(btn) {
+            const item = btn.closest('.achievement-item');
+            const container = document.getElementById('achievements-list');
+            if (container.children.length > 1) {
+              item.remove();
+            } else {
+              item.querySelector('input').value = '';
+            }
+          }
+          </script>
           <div class="form-actions">
             <button class="btn btn-primary" type="submit">Сохранить</button>
             <a class="btn btn-secondary" href="{{ url_for('admin_dashboard') }}">Отмена</a>
