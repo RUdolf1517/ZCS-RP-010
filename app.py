@@ -244,9 +244,7 @@ def create_app():
             adjusted_width = min(max_length + 2, 50)
             ws.column_dimensions[column_letter].width = adjusted_width
 
-        # Увеличим высоту строк, чтобы переносы отображались лучше
-        for row in range(2, ws.max_row + 1):
-            ws.row_dimensions[row].height = 15
+        # Оставляем авто-высоту строк (по умолчанию), т.к. wrap_text=True на ячейке достижений
 
         # Сохраняем в память
         output = io.BytesIO()

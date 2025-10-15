@@ -59,6 +59,22 @@ body { background: #f5f6fb; }
 .student-card__teacher { color: #6b7280; font-size: 0.9rem; }
 .student-card__achievements { margin-top: 0.5rem; }
 
+/* Achievements lists */
+.student-card__achievements { margin-top: 0.5rem; }
+.achievements-list { margin: 0; padding-left: 1rem; }
+.achievements-list li { margin-bottom: 0.2rem; line-height: 1.35; }
+
+/* Inline list styling in tables */
+table td ul { margin: 0; padding-left: 1rem; }
+table td li { margin-bottom: 0.2rem; line-height: 1.35; }
+
+/* Achievement inputs layout */
+.achievements-form-list { display: flex; flex-direction: column; gap: 0.5rem; }
+.achievement-item { display: flex; gap: 0.5rem; align-items: center; }
+.achievement-input { flex: 1 1 auto; min-width: 0; }
+.achievement-remove { white-space: nowrap; }
+.achievement-add { margin-top: 0.25rem; }
+
 /* Admin header */
 .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; }
 .admin-header__actions { display: flex; gap: 0.5rem; }

@@ -64,7 +64,7 @@
         <td>{{ s.class_teacher }}</td>
         <td>
           {% if s.achievements %}
-            <ul class="mb-0 ps-3">
+            <ul class="student-card__achievements achievements-list">
               {% for line in s.achievements.split('\n') %}
                 {% if line.strip() %}<li>{{ line }}</li>{% endif %}
               {% endfor %}

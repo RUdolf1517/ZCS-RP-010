@@ -27,30 +27,30 @@
           <div class="form-group form-group--full">
             <label class="form-label">Достижения</label>
             {% set ach_lines = (student.achievements.split('\n') if student and student.achievements else []) %}
-            <div id="achievements-list">
+            <div id="achievements-list" class="achievements-form-list">
               {% if ach_lines and ach_lines|length > 0 %}
                 {% for line in ach_lines %}
-                  <div class="d-flex gap-2 mb-2 achievement-item">
-                    <input type="text" name="achievements[]" class="form-input flex-grow-1" placeholder="Например: Победитель олимпиады…" value="{{ line }}">
-                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeAchievement(this)">Удалить</button>
+                  <div class="achievement-item">
+                    <input type="text" name="achievements[]" class="form-input achievement-input" placeholder="Например: Победитель олимпиады…" value="{{ line }}">
+                    <button type="button" class="btn btn-outline-danger btn-sm achievement-remove" onclick="removeAchievement(this)">Удалить</button>
                   </div>
                 {% endfor %}
               {% else %}
-                  <div class="d-flex gap-2 mb-2 achievement-item">
-                    <input type="text" name="achievements[]" class="form-input flex-grow-1" placeholder="Например: Победитель олимпиады…">
-                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeAchievement(this)">Удалить</button>
+                  <div class="achievement-item">
+                    <input type="text" name="achievements[]" class="form-input achievement-input" placeholder="Например: Победитель олимпиады…">
+                    <button type="button" class="btn btn-outline-danger btn-sm achievement-remove" onclick="removeAchievement(this)">Удалить</button>
                   </div>
               {% endif %}
             </div>
-            <button type="button" class="btn btn-outline-primary btn-sm" onclick="addAchievement()">Добавить достижение</button>
+            <button type="button" class="btn btn-outline-primary btn-sm achievement-add" onclick="addAchievement()">Добавить достижение</button>
           </div>
           <script>
           function addAchievement() {
             const container = document.getElementById('achievements-list');
             const item = document.createElement('div');
-            item.className = 'd-flex gap-2 mb-2 achievement-item';
-            item.innerHTML = '<input type="text" name="achievements[]" class="form-input flex-grow-1" placeholder="Например: Победитель олимпиады…">' +
-                             '<button type="button" class="btn btn-outline-danger btn-sm" onclick="removeAchievement(this)">Удалить</button>';
+            item.className = 'achievement-item';
+            item.innerHTML = '<input type="text" name="achievements[]" class="form-input achievement-input" placeholder="Например: Победитель олимпиады…">' +
+                             '<button type="button" class="btn btn-outline-danger btn-sm achievement-remove" onclick="removeAchievement(this)">Удалить</button>';
             container.appendChild(item);
           }
           function removeAchievement(btn) {
