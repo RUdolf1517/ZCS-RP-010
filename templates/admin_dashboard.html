@@ -1,23 +1,28 @@
 {% extends 'base.html' %}
 {% block title %}Админ — Ученики{% endblock %}
 {% block content %}
-<div class="admin-header">
-  <h1 class="page-title">Ученики</h1>
-  <div class="admin-header__actions">
-    <a class="btn btn-primary" href="{{ url_for('admin_student_new') }}">Новая карточка</a>
-    <a class="btn btn-success" href="{{ url_for('admin_export_excel') }}">Экспорт Excel</a>
-    <form method="get" action="{{ url_for('admin_export_excel_class') }}" class="d-inline-flex" style="gap: 0.5rem; align-items: center;">
-      <select class="filters__input" name="class" required>
-        <option value="" disabled selected>Выберите класс…</option>
-        {% for c in classes %}
-          <option value="{{ c }}">{{ c }}</option>
-        {% endfor %}
-      </select>
-      <button type="submit" class="btn btn-success">Экспорт класса</button>
-    </form>
-    <a class="btn btn-secondary" href="{{ url_for('admin_logout') }}">Выйти</a>
+<div class="admin-toolbar card">
+  <div class="admin-toolbar__row">
+    <div class="admin-toolbar__left">
+      <h1 class="page-title mb-0">Ученики</h1>
+    </div>
+    <div class="admin-toolbar__right">
+      <a class="btn btn-primary" href="{{ url_for('admin_student_new') }}">Новая карточка</a>
+      <a class="btn btn-success" href="{{ url_for('admin_export_excel') }}">Экспорт всех</a>
+      <div class="dropdown">
+        <button class="btn btn-success dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+          Экспорт класса
+        </button>
+        <ul class="dropdown-menu">
+          {% for c in classes %}
+            <li><a class="dropdown-item" href="{{ url_for('admin_export_excel_class') }}?class={{ c }}">{{ c }}</a></li>
+          {% endfor %}
+        </ul>
+      </div>
+      <a class="btn btn-secondary" href="{{ url_for('admin_logout') }}">Выйти</a>
+    </div>
   </div>
- </div>
+</div>
 
 <form method="get" class="filters">
   <div class="filters__group">
