@@ -260,6 +260,132 @@ def create_app():
             mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
 
+    # Экспорт по классам: каждый класс на отдельном листе
+    @app.route("/admin/export/excel_by_class")
+    def admin_export_excel_by_class():
+        auth_result = require_admin()
+        if auth_result != True:
+            return auth_result
+
+        with next(get_db_session()) as db:
+            students = db.execute(select(Student).order_by(Student.class_name.asc(), Student.full_name.asc())).scalars().all()
+
+        # Группируем по классам
+        from collections import defaultdict
+        class_to_students = defaultdict(list)
+        for s in students:
+            class_to_students[s.class_name].append(s)
+
+        wb = Workbook()
+        # Удаляем дефолтный лист, создадим свои
+        default_ws = wb.active
+        wb.remove(default_ws)
+
+        headers = ["ID", "ФИО", "Класс", "Кл. руководитель", "Достижения", "Дата создания"]
+
+        for class_name, class_students in class_to_students.items():
+            ws = wb.create_sheet(title=str(class_name)[:31])
+            # Заголовки
+            for col, header in enumerate(headers, 1):
+                cell = ws.cell(row=1, column=col, value=header)
+                cell.font = Font(bold=True)
+                cell.fill = PatternFill(start_color="CCCCCC", end_color="CCCCCC", fill_type="solid")
+                cell.alignment = Alignment(horizontal="center")
+
+            # Данные
+            for row, student in enumerate(class_students, 2):
+                ws.cell(row=row, column=1, value=student.id)
+                ws.cell(row=row, column=2, value=student.full_name)
+                ws.cell(row=row, column=3, value=student.class_name)
+                ws.cell(row=row, column=4, value=student.class_teacher)
+                ach_cell = ws.cell(row=row, column=5, value=student.achievements or "")
+                ach_cell.alignment = Alignment(wrap_text=True, vertical="top")
+                ws.cell(row=row, column=6, value=student.created_at.strftime("%Y-%m-%d %H:%M") if student.created_at else "")
+
+            # Автоподбор ширины
+            for column in ws.columns:
+                max_length = 0
+                column_letter = column[0].column_letter
+                for cell in column:
+                    try:
+                        if len(str(cell.value)) > max_length:
+                            max_length = len(str(cell.value))
+                    except:
+                        pass
+                adjusted_width = min(max_length + 2, 50)
+                ws.column_dimensions[column_letter].width = adjusted_width
+
+        output = io.BytesIO()
+        wb.save(output)
+        output.seek(0)
+
+        filename = f"ученики_по_классам_{datetime.now().strftime('%Y%m%d_%H%M')}.xlsx"
+        return send_file(
+            output,
+            as_attachment=True,
+            download_name=filename,
+            mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+
+    # Экспорт Excel по выбранному классу (через ?class=7А)
+    @app.route("/admin/export/excel_class")
+    def admin_export_excel_class():
+        auth_result = require_admin()
+        if auth_result != True:
+            return auth_result
+
+        class_name = request.args.get("class", "").strip()
+        if not class_name:
+            return redirect(url_for("admin_dashboard"))
+
+        with next(get_db_session()) as db:
+            stmt = select(Student).where(Student.class_name == class_name).order_by(Student.full_name.asc())
+            students = db.execute(stmt).scalars().all()
+
+        wb = Workbook()
+        ws = wb.active
+        ws.title = (str(class_name) or "Класс")[:31]
+
+        headers = ["ID", "ФИО", "Класс", "Кл. руководитель", "Достижения", "Дата создания"]
+        for col, header in enumerate(headers, 1):
+            cell = ws.cell(row=1, column=col, value=header)
+            cell.font = Font(bold=True)
+            cell.fill = PatternFill(start_color="CCCCCC", end_color="CCCCCC", fill_type="solid")
+            cell.alignment = Alignment(horizontal="center")
+
+        for row, student in enumerate(students, 2):
+            ws.cell(row=row, column=1, value=student.id)
+            ws.cell(row=row, column=2, value=student.full_name)
+            ws.cell(row=row, column=3, value=student.class_name)
+            ws.cell(row=row, column=4, value=student.class_teacher)
+            ach_cell = ws.cell(row=row, column=5, value=student.achievements or "")
+            ach_cell.alignment = Alignment(wrap_text=True, vertical="top")
+            ws.cell(row=row, column=6, value=student.created_at.strftime("%Y-%m-%d %H:%M") if student.created_at else "")
+
+        for column in ws.columns:
+            max_length = 0
+            column_letter = column[0].column_letter
+            for cell in column:
+                try:
+                    if len(str(cell.value)) > max_length:
+                        max_length = len(str(cell.value))
+                except:
+                    pass
+            adjusted_width = min(max_length + 2, 50)
+            ws.column_dimensions[column_letter].width = adjusted_width
+
+        output = io.BytesIO()
+        wb.save(output)
+        output.seek(0)
+
+        filename = f"ученики_{class_name}_{datetime.now().strftime('%Y%m%d_%H%M')}.xlsx"
+        return send_file(
+            output,
+            as_attachment=True,
+            download_name=filename,
+            mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+
     return app
 
 
