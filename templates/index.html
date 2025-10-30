@@ -26,11 +26,23 @@
           <div class="student-card__name">{{ s.full_name }}</div>
           <div class="student-card__teacher">Кл. руководитель: {{ s.class_teacher }}</div>
           {% if s.achievements %}
-            <ul class="student-card__achievements achievements-list">
-              {% for line in s.achievements.split('\n') %}
-                {% if line.strip() %}<li>{{ line }}</li>{% endif %}
-              {% endfor %}
-            </ul>
+            {% set achs = s.achievements | from_json %}
+            {% if achs and achs|length > 0 and achs[0]['title'] is defined %}
+              <ul class="student-card__achievements achievements-list">
+                {% for ach in achs %}
+                  <li>
+                    <b>{{ ach.title }}</b><br>
+                    <small>
+                      {% set lmap = {'school':'Школьный','district':'Районный','region':'Региональный','russia':'Всероссийский','world':'Международный'} %}
+                      {% set rmap = {'participant':'Участник','prize':'Призёр','winner':'Победитель'} %}
+                      {{ lmap.get(ach.level, ach.level) }}, {{ rmap.get(ach.result, ach.result) }}, {{ ach.year }}, {{ ach.date }}
+                    </small>
+                  </li>
+                {% endfor %}
+              </ul>
+            {% else %}
+              <div class="student-card__achievements">{{ s.achievements }}</div>
+            {% endif %}
           {% endif %}
         </div>
       {% else %}
