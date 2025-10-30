@@ -26,20 +26,65 @@
           </div>
           <div class="form-group form-group--full">
             <label class="form-label">Достижения</label>
-            {% set ach_lines = (student.achievements.split('\n') if student and student.achievements else []) %}
+            {% set achs = [] %}
+            {% if student and student.achievements %}
+              {% set achs = student.achievements|from_json %}
+            {% endif %}
             <div id="achievements-list" class="achievements-form-list">
-              {% if ach_lines and ach_lines|length > 0 %}
-                {% for line in ach_lines %}
+              {% if achs and achs|length > 0 %}
+                {% for ach in achs %}
                   <div class="achievement-item">
-                    <input type="text" name="achievements[]" class="form-input achievement-input" placeholder="Например: Победитель олимпиады…" value="{{ line }}">
+                    <input type="text" name="ach_title[]" class="form-input achievement-title" placeholder="Название конкурса" value="{{ ach.title if ach.title }}" required>
+                    <select name="ach_level[]" class="form-input achievement-select" required>
+                      <option value="">Уровень…</option>
+                      <option value="school" {% if ach.level=="school" %}selected{% endif %}>Школьный</option>
+                      <option value="district" {% if ach.level=="district" %}selected{% endif %}>Районный</option>
+                      <option value="region" {% if ach.level=="region" %}selected{% endif %}>Региональный</option>
+                      <option value="russia" {% if ach.level=="russia" %}selected{% endif %}>Россия</option>
+                      <option value="world" {% if ach.level=="world" %}selected{% endif %}>Международный</option>
+                    </select>
+                    <select name="ach_result[]" class="form-input achievement-select" required>
+                      <option value="">Результат…</option>
+                      <option value="participant" {% if ach.result=="participant" %}selected{% endif %}>Участник</option>
+                      <option value="winner" {% if ach.result=="winner" %}selected{% endif %}>Победитель</option>
+                      <option value="prize" {% if ach.result=="prize" %}selected{% endif %}>Призёр</option>
+                    </select>
+                    <select name="ach_year[]" class="form-input achievement-select" required>
+                      <option value="">Год…</option>
+                      {% for y in range(2023, 2040) %}
+                        <option value="{{ (y|string)[2:] }}/{{ ((y+1)|string)[2:] }}" {% if ach.year==((y|string)[2:] + '/' + ((y+1)|string)[2:]) %}selected{% endif %}>{{ (y|string)[2:] }}/{{ ((y+1)|string)[2:] }}</option>
+                      {% endfor %}
+                    </select>
+                    <input type="date" name="ach_date[]" class="form-input achievement-date" value="{{ ach.date }}" required>
                     <button type="button" class="btn btn-outline-danger btn-sm achievement-remove" onclick="removeAchievement(this)">Удалить</button>
                   </div>
                 {% endfor %}
               {% else %}
-                  <div class="achievement-item">
-                    <input type="text" name="achievements[]" class="form-input achievement-input" placeholder="Например: Победитель олимпиады…">
-                    <button type="button" class="btn btn-outline-danger btn-sm achievement-remove" onclick="removeAchievement(this)">Удалить</button>
-                  </div>
+                <div class="achievement-item">
+                  <input type="text" name="ach_title[]" class="form-input achievement-title" placeholder="Название конкурса" required>
+                  <select name="ach_level[]" class="form-input achievement-select" required>
+                    <option value="">Уровень…</option>
+                    <option value="school">Школьный</option>
+                    <option value="district">Районный</option>
+                    <option value="region">Региональный</option>
+                    <option value="russia">Россия</option>
+                    <option value="world">Международный</option>
+                  </select>
+                  <select name="ach_result[]" class="form-input achievement-select" required>
+                    <option value="">Результат…</option>
+                    <option value="participant">Участник</option>
+                    <option value="winner">Победитель</option>
+                    <option value="prize">Призёр</option>
+                  </select>
+                  <select name="ach_year[]" class="form-input achievement-select" required>
+                    <option value="">Год…</option>
+                    {% for y in range(2023, 2040) %}
+                      <option value="{{ (y|string)[2:] }}/{{ ((y+1)|string)[2:] }}">{{ (y|string)[2:] }}/{{ ((y+1)|string)[2:] }}</option>
+                    {% endfor %}
+                  </select>
+                  <input type="date" name="ach_date[]" class="form-input achievement-date" required>
+                  <button type="button" class="btn btn-outline-danger btn-sm achievement-remove" onclick="removeAchievement(this)">Удалить</button>
+                </div>
               {% endif %}
             </div>
             <button type="button" class="btn btn-outline-primary btn-sm achievement-add" onclick="addAchievement()">Добавить достижение</button>
@@ -49,8 +94,36 @@
             const container = document.getElementById('achievements-list');
             const item = document.createElement('div');
             item.className = 'achievement-item';
-            item.innerHTML = '<input type="text" name="achievements[]" class="form-input achievement-input" placeholder="Например: Победитель олимпиады…">' +
-                             '<button type="button" class="btn btn-outline-danger btn-sm achievement-remove" onclick="removeAchievement(this)">Удалить</button>';
+            item.innerHTML = `
+              <input type="text" name="ach_title[]" class="form-input achievement-title" placeholder="Название конкурса" required>
+              <select name="ach_level[]" class="form-input achievement-select" required>
+                <option value="">Уровень…</option>
+                <option value="school">Школьный</option>
+                <option value="district">Районный</option>
+                <option value="region">Региональный</option>
+                <option value="russia">Россия</option>
+                <option value="world">Международный</option>
+              </select>
+              <select name="ach_result[]" class="form-input achievement-select" required>
+                <option value="">Результат…</option>
+                <option value="participant">Участник</option>
+                <option value="winner">Победитель</option>
+                <option value="prize">Призёр</option>
+              </select>
+              <select name="ach_year[]" class="form-input achievement-select" required>
+                <option value="">Год…</option>
+                ${(() => {
+                  let s = '';
+                  for (let y = 2023; y < 2040; y++) {
+                    const val = String(y).slice(2) + '/' + String(y + 1).slice(2);
+                    s += `<option value="${val}">${val}</option>`;
+                  }
+                  return s;
+                })()}
+              </select>
+              <input type="date" name="ach_date[]" class="form-input achievement-date" required>
+              <button type="button" class="btn btn-outline-danger btn-sm achievement-remove" onclick="removeAchievement(this)">Удалить</button>
+            `;
             container.appendChild(item);
           }
           function removeAchievement(btn) {
@@ -59,7 +132,8 @@
             if (container.children.length > 1) {
               item.remove();
             } else {
-              item.querySelector('input').value = '';
+              // Очистить все поля в item
+              item.querySelectorAll('input, select').forEach(f => { f.value = ''; });
             }
           }
           </script>

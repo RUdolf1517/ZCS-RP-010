@@ -5,6 +5,7 @@ from flask import Flask, redirect, render_template, request, session, url_for, s
 from sqlalchemy import delete, select
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment
+import json
 
 from database import (
     Student,
@@ -23,6 +24,18 @@ def create_app():
 
     # Создаем таблицы (если их еще нет)
     init_db()
+
+    # JSON to object filter for jinja templates
+    def safe_from_json(s):
+        import json
+        try:
+            val = json.loads(s or '[]')
+            if isinstance(val, list):
+                return val
+            return []
+        except Exception:
+            return []
+    app.jinja_env.filters['from_json'] = safe_from_json
 
     # Главная: список карточек учеников (публичный просмотр)
     @app.route("/", methods=["GET"])
@@ -126,26 +139,40 @@ def create_app():
             full_name = request.form.get("full_name", "").strip()
             class_name = request.form.get("class_name", "").strip()
             class_teacher = request.form.get("class_teacher", "").strip()
-            # Собираем неограниченное число достижений из массива achievements[]
-            achievements_items = request.form.getlist("achievements[]")
-            achievements = "\n".join([a.strip() for a in achievements_items if a and a.strip()])
+
+            ach_titles = request.form.getlist("ach_title[]")
+            ach_levels = request.form.getlist("ach_level[]")
+            ach_results = request.form.getlist("ach_result[]")
+            ach_years = request.form.getlist("ach_year[]")
+            ach_dates = request.form.getlist("ach_date[]")
+            achievements = []
+            for i in range(len(ach_titles)):
+                if not (ach_titles[i].strip() and ach_levels[i] and ach_results[i] and ach_years[i] and ach_dates[i]):
+                    continue
+                achievements.append({
+                    "title": ach_titles[i].strip(),
+                    "level": ach_levels[i],
+                    "result": ach_results[i],
+                    "year": ach_years[i],
+                    "date": ach_dates[i],
+                })
+            achievements_json = json.dumps(achievements, ensure_ascii=False)
 
             if not (full_name and class_name and class_teacher):
-                return render_template("admin_student_form.html", error_message="Заполните все обязательные поля.")
+                return render_template("admin_student_form.html", error_message="Заполните все обязательные поля.", achievements=json.dumps(achievements, ensure_ascii=False))
 
             with next(get_db_session()) as db:
                 s = Student(
                     full_name=full_name,
                     class_name=class_name,
                     class_teacher=class_teacher,
-                    achievements=achievements or None,
+                    achievements=achievements_json or None,
                 )
                 db.add(s)
                 db.commit()
-
             return redirect(url_for("admin_dashboard", ok=1))
 
-        return render_template("admin_student_form.html")
+        return render_template("admin_student_form.html", achievements='[]')
 
     # Редактирование карточки ученика (админ)
     @app.route("/admin/students/<int:student_id>/edit", methods=["GET", "POST"])
@@ -163,25 +190,37 @@ def create_app():
                 full_name = request.form.get("full_name", "").strip()
                 class_name = request.form.get("class_name", "").strip()
                 class_teacher = request.form.get("class_teacher", "").strip()
-                achievements_items = request.form.getlist("achievements[]")
-                achievements = "\n".join([a.strip() for a in achievements_items if a and a.strip()])
+
+                ach_titles = request.form.getlist("ach_title[]")
+                ach_levels = request.form.getlist("ach_level[]")
+                ach_results = request.form.getlist("ach_result[]")
+                ach_years = request.form.getlist("ach_year[]")
+                ach_dates = request.form.getlist("ach_date[]")
+                achievements = []
+                for i in range(len(ach_titles)):
+                    if not (ach_titles[i].strip() and ach_levels[i] and ach_results[i] and ach_years[i] and ach_dates[i]):
+                        continue
+                    achievements.append({
+                        "title": ach_titles[i].strip(),
+                        "level": ach_levels[i],
+                        "result": ach_results[i],
+                        "year": ach_years[i],
+                        "date": ach_dates[i],
+                    })
+                achievements_json = json.dumps(achievements, ensure_ascii=False)
 
                 if not (full_name and class_name and class_teacher):
-                    return render_template(
-                        "admin_student_form.html",
-                        error_message="Заполните все обязательные поля.",
-                        student=student,
-                    )
+                    return render_template("admin_student_form.html", error_message="Заполните все обязательные поля.", achievements=json.dumps(achievements, ensure_ascii=False), student=student)
 
                 student.full_name = full_name
                 student.class_name = class_name
                 student.class_teacher = class_teacher
-                student.achievements = achievements or None
+                student.achievements = achievements_json or None
                 db.commit()
-
                 return redirect(url_for("admin_dashboard", ok=1))
 
-        return render_template("admin_student_form.html", student=student)
+        achievements_json = student.achievements or '[]'
+        return render_template("admin_student_form.html", student=student, achievements=safe_from_json(achievements_json))
 
     # Удаление карточки ученика (админ)
     @app.route("/admin/students/<int:student_id>/delete", methods=["POST"])
@@ -212,8 +251,10 @@ def create_app():
         ws = wb.active
         ws.title = "Карточки учеников"
 
-        # Заголовки
-        headers = ["ID", "ФИО", "Класс", "Кл. руководитель", "Достижения", "Дата создания"]
+        # Заголовки на русском
+        headers = ["ID", "ФИО", "Класс", "Кл. руководитель", "Название конкурса", "Уровень", "Результат", "Год", "Дата участия", "Дата создания"]
+        level_map = {'school':'Школьный','district':'Районный','region':'Региональный','russia':'Всероссийский','world':'Международный'}
+        result_map = {'participant':'Участник','prize':'Призёр','winner':'Победитель'}
         for col, header in enumerate(headers, 1):
             cell = ws.cell(row=1, column=col, value=header)
             cell.font = Font(bold=True)
@@ -221,15 +262,38 @@ def create_app():
             cell.alignment = Alignment(horizontal="center")
 
         # Данные
-        for row, student in enumerate(students, 2):
-            ws.cell(row=row, column=1, value=student.id)
-            ws.cell(row=row, column=2, value=student.full_name)
-            ws.cell(row=row, column=3, value=student.class_name)
-            ws.cell(row=row, column=4, value=student.class_teacher)
-            ach_cell = ws.cell(row=row, column=5, value=student.achievements or "")
-            # Включаем перенос текста внутри ячейки
-            ach_cell.alignment = Alignment(wrap_text=True, vertical="top")
-            ws.cell(row=row, column=6, value=student.created_at.strftime("%Y-%m-%d %H:%M") if student.created_at else "")
+        row = 2
+        for student in students:
+            parsed = []
+            try:
+                parsed = json.loads(student.achievements or "[]")
+                if not isinstance(parsed, list):
+                    parsed = []
+            except Exception:
+                parsed = []
+            if parsed and isinstance(parsed, list) and "title" in parsed[0]:
+                for ach in parsed:
+                    ws.cell(row=row, column=1, value=student.id)
+                    ws.cell(row=row, column=2, value=student.full_name)
+                    ws.cell(row=row, column=3, value=student.class_name)
+                    ws.cell(row=row, column=4, value=student.class_teacher)
+                    ws.cell(row=row, column=5, value=ach.get("title", ""))
+                    ws.cell(row=row, column=6, value=level_map.get(ach.get("level", ""), ach.get("level", "")))
+                    ws.cell(row=row, column=7, value=result_map.get(ach.get("result", ""), ach.get("result", "")))
+                    ws.cell(row=row, column=8, value=ach.get("year", ""))
+                    ws.cell(row=row, column=9, value=ach.get("date", ""))
+                    ws.cell(row=row, column=10, value=student.created_at.strftime("%Y-%m-%d %H:%M") if student.created_at else "")
+                    row += 1
+            else:
+                ws.cell(row=row, column=1, value=student.id)
+                ws.cell(row=row, column=2, value=student.full_name)
+                ws.cell(row=row, column=3, value=student.class_name)
+                ws.cell(row=row, column=4, value=student.class_teacher)
+                ws.cell(row=row, column=5, value=student.achievements or "")
+                for c in range(6,11):
+                    ws.cell(row=row, column=c, value="")
+                ws.cell(row=row, column=10, value=student.created_at.strftime("%Y-%m-%d %H:%M") if student.created_at else "")
+                row += 1
 
         # Автоподбор ширины колонок
         for column in ws.columns:
@@ -281,7 +345,7 @@ def create_app():
         default_ws = wb.active
         wb.remove(default_ws)
 
-        headers = ["ID", "ФИО", "Класс", "Кл. руководитель", "Достижения", "Дата создания"]
+        headers = ["ID", "ФИО", "Класс", "Кл. руководитель", "Название конкурса", "Уровень", "Результат", "Год", "Дата участия", "Дата создания"]
 
         for class_name, class_students in class_to_students.items():
             ws = wb.create_sheet(title=str(class_name)[:31])
@@ -293,14 +357,38 @@ def create_app():
                 cell.alignment = Alignment(horizontal="center")
 
             # Данные
-            for row, student in enumerate(class_students, 2):
-                ws.cell(row=row, column=1, value=student.id)
-                ws.cell(row=row, column=2, value=student.full_name)
-                ws.cell(row=row, column=3, value=student.class_name)
-                ws.cell(row=row, column=4, value=student.class_teacher)
-                ach_cell = ws.cell(row=row, column=5, value=student.achievements or "")
-                ach_cell.alignment = Alignment(wrap_text=True, vertical="top")
-                ws.cell(row=row, column=6, value=student.created_at.strftime("%Y-%m-%d %H:%M") if student.created_at else "")
+            row = 2
+            for student in class_students:
+                parsed = []
+                try:
+                    parsed = json.loads(student.achievements or "[]")
+                    if not isinstance(parsed, list):
+                        parsed = []
+                except Exception:
+                    parsed = []
+                if parsed and isinstance(parsed, list) and "title" in parsed[0]:
+                    for ach in parsed:
+                        ws.cell(row=row, column=1, value=student.id)
+                        ws.cell(row=row, column=2, value=student.full_name)
+                        ws.cell(row=row, column=3, value=student.class_name)
+                        ws.cell(row=row, column=4, value=student.class_teacher)
+                        ws.cell(row=row, column=5, value=ach.get("title", ""))
+                        ws.cell(row=row, column=6, value=ach.get("level", ""))
+                        ws.cell(row=row, column=7, value=ach.get("result", ""))
+                        ws.cell(row=row, column=8, value=ach.get("year", ""))
+                        ws.cell(row=row, column=9, value=ach.get("date", ""))
+                        ws.cell(row=row, column=10, value=student.created_at.strftime("%Y-%m-%d %H:%M") if student.created_at else "")
+                        row += 1
+                else:
+                    ws.cell(row=row, column=1, value=student.id)
+                    ws.cell(row=row, column=2, value=student.full_name)
+                    ws.cell(row=row, column=3, value=student.class_name)
+                    ws.cell(row=row, column=4, value=student.class_teacher)
+                    ws.cell(row=row, column=5, value=student.achievements or "")
+                    for c in range(6,11):
+                        ws.cell(row=row, column=c, value="")
+                    ws.cell(row=row, column=10, value=student.created_at.strftime("%Y-%m-%d %H:%M") if student.created_at else "")
+                    row += 1
 
             # Автоподбор ширины
             for column in ws.columns:
@@ -346,21 +434,45 @@ def create_app():
         ws = wb.active
         ws.title = (str(class_name) or "Класс")[:31]
 
-        headers = ["ID", "ФИО", "Класс", "Кл. руководитель", "Достижения", "Дата создания"]
+        headers = ["ID", "ФИО", "Класс", "Кл. руководитель", "Название конкурса", "Уровень", "Результат", "Год", "Дата участия", "Дата создания"]
         for col, header in enumerate(headers, 1):
             cell = ws.cell(row=1, column=col, value=header)
             cell.font = Font(bold=True)
             cell.fill = PatternFill(start_color="CCCCCC", end_color="CCCCCC", fill_type="solid")
             cell.alignment = Alignment(horizontal="center")
 
-        for row, student in enumerate(students, 2):
-            ws.cell(row=row, column=1, value=student.id)
-            ws.cell(row=row, column=2, value=student.full_name)
-            ws.cell(row=row, column=3, value=student.class_name)
-            ws.cell(row=row, column=4, value=student.class_teacher)
-            ach_cell = ws.cell(row=row, column=5, value=student.achievements or "")
-            ach_cell.alignment = Alignment(wrap_text=True, vertical="top")
-            ws.cell(row=row, column=6, value=student.created_at.strftime("%Y-%m-%d %H:%M") if student.created_at else "")
+        row = 2
+        for student in students:
+            parsed = []
+            try:
+                parsed = json.loads(student.achievements or "[]")
+                if not isinstance(parsed, list):
+                    parsed = []
+            except Exception:
+                parsed = []
+            if parsed and isinstance(parsed, list) and "title" in parsed[0]:
+                for ach in parsed:
+                    ws.cell(row=row, column=1, value=student.id)
+                    ws.cell(row=row, column=2, value=student.full_name)
+                    ws.cell(row=row, column=3, value=student.class_name)
+                    ws.cell(row=row, column=4, value=student.class_teacher)
+                    ws.cell(row=row, column=5, value=ach.get("title", ""))
+                    ws.cell(row=row, column=6, value=ach.get("level", ""))
+                    ws.cell(row=row, column=7, value=ach.get("result", ""))
+                    ws.cell(row=row, column=8, value=ach.get("year", ""))
+                    ws.cell(row=row, column=9, value=ach.get("date", ""))
+                    ws.cell(row=row, column=10, value=student.created_at.strftime("%Y-%m-%d %H:%M") if student.created_at else "")
+                    row += 1
+            else:
+                ws.cell(row=row, column=1, value=student.id)
+                ws.cell(row=row, column=2, value=student.full_name)
+                ws.cell(row=row, column=3, value=student.class_name)
+                ws.cell(row=row, column=4, value=student.class_teacher)
+                ws.cell(row=row, column=5, value=student.achievements or "")
+                for c in range(6,11):
+                    ws.cell(row=row, column=c, value="")
+                ws.cell(row=row, column=10, value=student.created_at.strftime("%Y-%m-%d %H:%M") if student.created_at else "")
+                row += 1
 
         for column in ws.columns:
             max_length = 0

@@ -79,12 +79,24 @@
         <td>{{ s.class_name }}</td>
         <td>{{ s.class_teacher }}</td>
         <td>
-          {% if s.achievements %}
-            <ul class="student-card__achievements achievements-list">
-              {% for line in s.achievements.split('\n') %}
-                {% if line.strip() %}<li>{{ line }}</li>{% endif %}
+          {% set achs = s.achievements | from_json %}
+          {% if achs and achs|length > 0 and achs[0]['title'] is defined %}
+          <table class="mini-ach-table">
+            <thead><tr><th>Конкурс</th><th>Уровень</th><th>Результат</th><th>Год</th><th>Дата</th></tr></thead>
+            <tbody>
+              {% for ach in achs %}
+                <tr>
+                  <td>{{ ach.title }}</td>
+                  <td>{% if ach.level=='school' %}Школьный{% elif ach.level=='district' %}Районный{% elif ach.level=='region' %}Региональный{% elif ach.level=='russia' %}Россия{% elif ach.level=='world' %}Международный{% else %}{{ ach.level }}{% endif %}</td>
+                  <td>{% if ach.result=='participant' %}Участник{% elif ach.result=='prize' %}Призёр{% elif ach.result=='winner' %}Победитель{% else %}{{ ach.result }}{% endif %}</td>
+                  <td>{{ ach.year }}</td>
+                  <td>{{ ach.date }}</td>
+                </tr>
               {% endfor %}
-            </ul>
+            </tbody>
+          </table>
+          {% elif s.achievements %}
+            <div>{{ s.achievements }}</div>
           {% endif %}
         </td>
         <td>{{ s.created_at.strftime('%Y-%m-%d %H:%M') if s.created_at else '' }}</td>
