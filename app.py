@@ -346,6 +346,8 @@ def create_app():
         wb.remove(default_ws)
 
         headers = ["ID", "ФИО", "Класс", "Кл. руководитель", "Название конкурса", "Уровень", "Результат", "Год", "Дата участия", "Дата создания"]
+        level_map = {'school':'Школьный','district':'Районный','region':'Региональный','russia':'Всероссийский','world':'Международный'}
+        result_map = {'participant':'Участник','prize':'Призёр','winner':'Победитель'}
 
         for class_name, class_students in class_to_students.items():
             ws = wb.create_sheet(title=str(class_name)[:31])
@@ -373,8 +375,8 @@ def create_app():
                         ws.cell(row=row, column=3, value=student.class_name)
                         ws.cell(row=row, column=4, value=student.class_teacher)
                         ws.cell(row=row, column=5, value=ach.get("title", ""))
-                        ws.cell(row=row, column=6, value=ach.get("level", ""))
-                        ws.cell(row=row, column=7, value=ach.get("result", ""))
+                        ws.cell(row=row, column=6, value=level_map.get(ach.get("level", ""), ach.get("level", "")))
+                        ws.cell(row=row, column=7, value=result_map.get(ach.get("result", ""), ach.get("result", "")))
                         ws.cell(row=row, column=8, value=ach.get("year", ""))
                         ws.cell(row=row, column=9, value=ach.get("date", ""))
                         ws.cell(row=row, column=10, value=student.created_at.strftime("%Y-%m-%d %H:%M") if student.created_at else "")
@@ -435,6 +437,8 @@ def create_app():
         ws.title = (str(class_name) or "Класс")[:31]
 
         headers = ["ID", "ФИО", "Класс", "Кл. руководитель", "Название конкурса", "Уровень", "Результат", "Год", "Дата участия", "Дата создания"]
+        level_map = {'school':'Школьный','district':'Районный','region':'Региональный','russia':'Всероссийский','world':'Международный'}
+        result_map = {'participant':'Участник','prize':'Призёр','winner':'Победитель'}
         for col, header in enumerate(headers, 1):
             cell = ws.cell(row=1, column=col, value=header)
             cell.font = Font(bold=True)
@@ -457,8 +461,8 @@ def create_app():
                     ws.cell(row=row, column=3, value=student.class_name)
                     ws.cell(row=row, column=4, value=student.class_teacher)
                     ws.cell(row=row, column=5, value=ach.get("title", ""))
-                    ws.cell(row=row, column=6, value=ach.get("level", ""))
-                    ws.cell(row=row, column=7, value=ach.get("result", ""))
+                    ws.cell(row=row, column=6, value=level_map.get(ach.get("level", ""), ach.get("level", "")))
+                    ws.cell(row=row, column=7, value=result_map.get(ach.get("result", ""), ach.get("result", "")))
                     ws.cell(row=row, column=8, value=ach.get("year", ""))
                     ws.cell(row=row, column=9, value=ach.get("date", ""))
                     ws.cell(row=row, column=10, value=student.created_at.strftime("%Y-%m-%d %H:%M") if student.created_at else "")
