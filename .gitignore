@@ -13,7 +13,6 @@ ENV/
 
 # Local environment/config
 .env
-.env.*
 *.env
 
 # SQLite / local DB
