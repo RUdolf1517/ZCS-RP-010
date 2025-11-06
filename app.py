@@ -1,3 +1,9 @@
+"""
+Панель управления достижениями учеников ZCS-RP-010
+Student Achievement Management Panel
+
+Загружает конфигурацию из переменных окружения (.env файл)
+"""
 import os
 import io
 from datetime import datetime
@@ -6,6 +12,24 @@ from sqlalchemy import delete, select
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment
 import json
+
+# Загрузка переменных окружения из .env файла
+# Это происходит ДО импорта других модулей, чтобы переменные были доступны везде
+try:
+    from dotenv import load_dotenv
+    # Загружаем .env из текущей директории
+    env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.env')
+    if os.path.exists(env_path):
+        load_dotenv(env_path)
+    else:
+        # Пытаемся загрузить из текущей директории
+        load_dotenv()
+except ImportError:
+    # python-dotenv не установлен, используем системные переменные окружения
+    pass
+except Exception as e:
+    # Игнорируем ошибки загрузки .env, используем системные переменные
+    pass
 
 from database import (
     Student,
@@ -17,10 +41,25 @@ from database import (
 
 
 def create_app():
+    """
+    Фабрика приложения Flask.
+    Создает и настраивает приложение с использованием переменных окружения.
+    """
     # Создаем приложение Flask
     app = Flask(__name__)
-    # Ключ для сессий и flash-сообщений
-    app.config["SECRET_KEY"] = os.environ.get("FLASK_SECRET_KEY", "dev-secret-key")
+    
+    # Ключ для сессий и flash-сообщений (из переменных окружения)
+    # Если не установлен, генерируем предупреждение
+    secret_key = os.environ.get("FLASK_SECRET_KEY")
+    if not secret_key:
+        import warnings
+        warnings.warn(
+            "FLASK_SECRET_KEY не установлен! Используется небезопасный ключ по умолчанию. "
+            "Установите FLASK_SECRET_KEY в .env файле для продакшена.",
+            UserWarning
+        )
+        secret_key = "dev-secret-key-change-in-production"
+    app.config["SECRET_KEY"] = secret_key
 
     # Создаем таблицы (если их еще нет)
     init_db()
@@ -58,8 +97,8 @@ def create_app():
             # Берем дефолтного пользователя (можно переопределить через переменные окружения ниже)
             admin = get_admin_user()
 
-            user = "admin"
-            passw = "12345"
+            user = os.environ.get("ADMIN_USERNAME", "admin")
+            passw = os.environ.get("ADMIN_PASSWORD", "12345")
             
             admin.username = user
             admin.password = passw
@@ -510,7 +549,21 @@ app = create_app()
 
 
 if __name__ == "__main__":
-    # Запускаем локальный сервер разработчика
-    app.run(debug=True)
+    """
+    Запуск приложения в режиме разработки.
+    В продакшене используйте systemd service или WSGI сервер (gunicorn, uwsgi).
+    """
+    # Загружаем настройки из переменных окружения
+    host = os.environ.get("FLASK_HOST", "0.0.0.0")
+    port = int(os.environ.get("FLASK_PORT", "5000"))
+    debug = os.environ.get("FLASK_DEBUG", "False").lower() == "true"
+    
+    print(f"Запуск панели управления учениками ZCS-RP-010")
+    print(f"Адрес: http://{host}:{port}")
+    print(f"Режим отладки: {'включен' if debug else 'выключен'}")
+    print(f"Для остановки нажмите Ctrl+C")
+    print()
+    
+    app.run(host=host, port=port, debug=debug)
 
 
