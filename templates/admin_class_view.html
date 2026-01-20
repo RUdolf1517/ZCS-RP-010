@@ -1,0 +1,185 @@
+{% extends 'base.html' %}
+{% block title %}Класс {{ school_class.class_name }}{% endblock %}
+{% block content %}
+<div class="form-page">
+  <div class="form-container">
+    <div class="form-card">
+      <div class="form-card__body">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="alert alert-{{ 'danger' if category == 'error' else 'success' if category == 'success' else 'warning' }}">
+                {{ message }}
+              </div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        <div class="class-header mb-4">
+          <div class="d-flex justify-content-between align-items-start">
+            <div>
+              <h1 class="form-title mb-2">{{ school_class.class_name }}</h1>
+              <p class="text-muted mb-0">{{ school_class.grade.grade_name }}</p>
+              {% if school_class.class_teacher %}
+                <p class="mb-0">
+                  <strong>Классный руководитель:</strong>
+                  {{ school_class.class_teacher.username }}
+                  <span class="badge bg-info">{{ user_roles[school_class.class_teacher.role]['name'] }}</span>
+                </p>
+              {% else %}
+                <p class="text-warning mb-0"><em>Классный руководитель не назначен</em></p>
+              {% endif %}
+            </div>
+            <div>
+              <a class="btn btn-outline-primary" href="{{ url_for('admin_class_edit', class_id=school_class.id) }}">
+                Редактировать класс
+              </a>
+              {% if session.admin_role == 'admin' or (session.admin_role == 'class_teacher' and school_class.class_teacher and school_class.class_teacher.username == session.admin_username) %}
+              <a class="btn btn-success" href="{{ url_for('admin_export_class_report', class_id=school_class.id) }}">
+                📊 Скачать отчет класса
+              </a>
+              {% endif %}
+              <form method="post" action="{{ url_for('admin_class_delete', class_id=school_class.id) }}" style="display: inline;" onsubmit="return confirm('Удалить класс {{ school_class.class_name }}? Это действие нельзя отменить!')">
+                <button type="submit" class="btn btn-outline-danger">🗑️ Удалить класс</button>
+              </form>
+              <a class="btn btn-outline-secondary" href="{{ url_for('admin_classes') }}">
+                Все классы
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <div class="class-stats mb-4">
+          <div class="row">
+            <div class="col-md-3">
+              <div class="stat-card">
+                <div class="stat-number">{{ students|length }}</div>
+                <div class="stat-label">Учеников</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {% if students %}
+          <div class="mb-3">
+            <h3>Ученики класса</h3>
+            <a class="btn btn-primary btn-sm" href="{{ url_for('admin_student_new', class_id=school_class.id) }}">
+              Добавить ученика
+            </a>
+          </div>
+
+          <div class="students-list">
+            {% for student in students %}
+              <div class="student-item">
+                <div class="student-info">
+                  <h5 class="student-name">{{ student.full_name }}</h5>
+                  {% if student.achievements %}
+                    <div class="achievements-preview">
+                      {% set achs = student.achievements | from_json %}
+                      {% if achs and achs|length > 0 %}
+                        <small class="text-muted">{{ achs|length }} достижений</small>
+                      {% endif %}
+                    </div>
+                  {% endif %}
+                </div>
+                <div class="student-actions">
+                  <a class="btn btn-sm btn-outline-primary" href="{{ url_for('admin_student_edit', student_id=student.id) }}">
+                    Редактировать
+                  </a>
+                  <form method="post" action="{{ url_for('admin_student_delete', student_id=student.id) }}" style="display: inline;" onsubmit="return confirm('Удалить ученика {{ student.full_name }}?');">
+                    <button type="submit" class="btn btn-sm btn-outline-danger">Удалить</button>
+                  </form>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="text-center py-5">
+            <p class="text-muted mb-3">В классе пока нет учеников</p>
+            <a class="btn btn-primary" href="{{ url_for('admin_student_new', class_id=school_class.id) }}">
+              Добавить первого ученика
+            </a>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.class-header {
+  border-bottom: 2px solid #e7e9f2;
+  padding-bottom: 1rem;
+}
+
+.class-stats {
+  margin-bottom: 2rem;
+}
+
+.stat-card {
+  background: #f8f9fa;
+  border: 1px solid #e7e9f2;
+  border-radius: 8px;
+  padding: 1rem;
+  text-align: center;
+}
+
+.stat-number {
+  font-size: 2rem;
+  font-weight: 600;
+  color: #3d6bff;
+}
+
+.stat-label {
+  color: #6c757d;
+  font-size: 0.9rem;
+}
+
+.students-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.student-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  border: 1px solid #e7e9f2;
+  border-radius: 8px;
+  background: white;
+}
+
+.student-info {
+  flex: 1;
+}
+
+.student-name {
+  margin: 0 0 0.25rem 0;
+  color: #2d3748;
+}
+
+.achievements-preview {
+  margin-top: 0.25rem;
+}
+
+.student-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+@media (max-width: 768px) {
+  .student-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .student-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}
+</style>
+{% endblock %}

@@ -19,38 +19,151 @@
       </div>
     </form>
 
-    <div class="student-grid">
-      {% for s in students %}
-        <div class="student-card">
-          <div class="student-card__class">{{ s.class_name }}</div>
-          <div class="student-card__name">{{ s.full_name }}</div>
-          <div class="student-card__teacher">Кл. руководитель: {{ s.class_teacher }}</div>
-          {% if s.achievements %}
-            {% set achs = s.achievements | from_json %}
-            {% if achs and achs|length > 0 and achs[0]['title'] is defined %}
-              <ul class="student-card__achievements achievements-list">
-                {% for ach in achs %}
-                  <li>
-                    <b>{{ ach.title }}</b><br>
-                    <small>
-                      {% set lmap = {'school':'Школьный','district':'Районный','region':'Региональный','russia':'Всероссийский','world':'Международный'} %}
-                      {% set rmap = {'participant':'Участник','prize':'Призёр','winner':'Победитель'} %}
-                      {{ lmap.get(ach.level, ach.level) }}, {{ rmap.get(ach.result, ach.result) }}, {{ ach.year }}, {{ ach.date }}
-                    </small>
-                  </li>
-                {% endfor %}
-              </ul>
-            {% else %}
-              <div class="student-card__achievements">{{ s.achievements }}</div>
+    <div class="classes-grid">
+      {% for class_info in classes %}
+        <div class="class-section">
+          <div class="class-header">
+            <h3 class="class-title">{{ class_info.class_name }}</h3>
+            {% if class_info.class_teacher %}
+              <div class="class-teacher">Классный руководитель: {{ class_info.class_teacher }}</div>
             {% endif %}
-          {% endif %}
+          </div>
+
+          <div class="students-grid">
+            {% for student in class_info.students %}
+              <div class="student-card">
+                <div class="student-card__name">{{ student.full_name }}</div>
+                {% if student.achievements %}
+                  {% set achs = student.achievements | from_json %}
+                  {% if achs and achs|length > 0 and achs[0]['title'] is defined %}
+                    <ul class="student-card__achievements achievements-list">
+                      {% for ach in achs %}
+                        <li>
+                          <b>{{ ach.title }}</b><br>
+                          <small>
+                            {% set lmap = {'school':'Школьный','district':'Районный','region':'Региональный','russia':'Всероссийский','world':'Международный'} %}
+                            {% set rmap = {'participant':'Участник','prize':'Призёр','winner':'Победитель'} %}
+                            {{ lmap.get(ach.level, ach.level) }}, {{ rmap.get(ach.result, ach.result) }}, {{ ach.year }}, {{ ach.date }}
+                          </small>
+                        </li>
+                      {% endfor %}
+                    </ul>
+                  {% else %}
+                    <div class="student-card__achievements">{{ student.achievements }}</div>
+                  {% endif %}
+                {% else %}
+                  <div class="student-card__achievements text-muted">Достижения не добавлены</div>
+                {% endif %}
+              </div>
+            {% endfor %}
+          </div>
         </div>
       {% else %}
-        <div class="muted">Ничего не найдено</div>
+        <div class="text-center py-5">
+          <div class="text-muted">Ничего не найдено</div>
+        </div>
       {% endfor %}
     </div>
   </div>
- </div>
+</div>
+
+<style>
+.classes-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.class-section {
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 1.5rem;
+  border: 1px solid #e9ecef;
+}
+
+.class-header {
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #dee2e6;
+}
+
+.class-title {
+  color: #495057;
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0 0 0.5rem 0;
+}
+
+.class-teacher {
+  color: #6c757d;
+  font-size: 0.9rem;
+  font-style: italic;
+}
+
+.students-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1rem;
+}
+
+.student-card {
+  background: white;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  padding: 1rem;
+  transition: box-shadow 0.2s;
+}
+
+.student-card:hover {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.student-card__name {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #2d3748;
+  margin-bottom: 0.75rem;
+}
+
+.student-card__achievements {
+  font-size: 0.85rem;
+  color: #4a5568;
+  line-height: 1.4;
+}
+
+.achievements-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.achievements-list li {
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #f1f3f4;
+}
+
+.achievements-list li:last-child {
+  border-bottom: none;
+}
+
+.achievements-list li b {
+  color: #2d3748;
+}
+
+.text-muted {
+  color: #6c757d !important;
+}
+
+@media (max-width: 768px) {
+  .students-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .class-title {
+    font-size: 1.25rem;
+  }
+}
+</style>
 {% endblock %}
 
 

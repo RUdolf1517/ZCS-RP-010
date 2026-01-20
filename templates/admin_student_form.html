@@ -11,18 +11,43 @@
           <div class="alert error">{{ error_message }}</div>
         {% endif %}
 
+        {% if similar_students %}
+          <div class="alert alert-warning">
+            <h5>Возможное дублирование найдено:</h5>
+            <ul>
+              {% for student in similar_students %}
+                <li><strong>{{ student.full_name }}</strong> - {{ student.class_name }} (кл. {{ student.class_teacher }})</li>
+              {% endfor %}
+            </ul>
+            <p>Если это не дублирование, продолжите создание. В противном случае отмените и проверьте существующего ученика.</p>
+          </div>
+        {% endif %}
+
         <form method="post" class="form-grid">
           <div class="form-group">
             <label class="form-label">ФИО *</label>
-            <input type="text" name="full_name" class="form-input" value="{{ student.full_name if student }}" required>
+            <input type="text" name="full_name" class="form-input" value="{{ (student.full_name if student) or (form_data.full_name if form_data) }}" required>
           </div>
           <div class="form-group">
             <label class="form-label">Класс *</label>
-            <input type="text" name="class_name" class="form-input" placeholder="7А" value="{{ student.class_name if student }}" required>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Кл. руководитель *</label>
-            <input type="text" name="class_teacher" class="form-input" value="{{ student.class_teacher if student }}" required>
+            <select name="school_class_id" class="form-input" required>
+              <option value="">Выберите класс...</option>
+              {% for grade in grades %}
+                <optgroup label="{{ grade.grade_name }}">
+                  {% for school_class in grade.classes %}
+                    <option value="{{ school_class.id }}"
+                            {% if (student and student.school_class_id == school_class.id) or (selected_class and selected_class.id == school_class.id) or (form_data and form_data.school_class_id == school_class.id|string) %}selected{% endif %}>
+                      {{ school_class.class_name }}
+                      {% if school_class.class_teacher %}
+                        ({{ school_class.class_teacher.username }})
+                      {% else %}
+                        (без руководителя)
+                      {% endif %}
+                    </option>
+                  {% endfor %}
+                </optgroup>
+              {% endfor %}
+            </select>
           </div>
           <div class="form-group form-group--full">
             <label class="form-label">Достижения</label>

@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+{% block title %}Управление бэкапами{% endblock %}
+{% block content %}
+<div class="form-page">
+  <div class="form-container">
+    <div class="form-card">
+      <div class="form-card__body">
+        <h1 class="form-title">Управление бэкапами базы данных</h1>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="alert alert-{{ 'danger' if category == 'error' else 'success' if category == 'success' else 'warning' }}">
+                {{ message }}
+              </div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        <div class="backup-info">
+          <h3>Создание бэкапа</h3>
+          <p>Бэкап содержит полную копию базы данных учеников и администраторов.</p>
+          <form method="post" style="display: inline;">
+            <input type="hidden" name="action" value="create">
+            <button class="btn btn-success" type="submit">Создать бэкап сейчас</button>
+          </form>
+        </div>
+
+        <h3>Доступные бэкапы</h3>
+        {% if backups %}
+          <div class="table-responsive">
+            <table class="table table-sm">
+              <thead>
+                <tr>
+                  <th>Имя файла</th>
+                  <th>Размер</th>
+                  <th>Дата создания</th>
+                  <th>Действия</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for backup in backups %}
+                  <tr>
+                    <td>{{ backup.filename }}</td>
+                    <td>{{ backup.size_human }}</td>
+                    <td>{{ backup.created.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                    <td>
+                      <a href="{{ url_for('admin_backup_download', filename=backup.filename) }}" class="btn btn-sm btn-primary">Скачать</a>
+                      <form method="post" style="display: inline; margin-left: 5px;">
+                        <input type="hidden" name="action" value="restore">
+                        <input type="hidden" name="backup_file" value="{{ backup.filename }}">
+                        <button type="submit" class="btn btn-sm btn-warning"
+                                onclick="return confirm('Восстановить базу данных из {{ backup.filename }}?\nТекущие данные будут сохранены в новом бэкапе.')">
+                          Восстановить
+                        </button>
+                      </form>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <p class="text-muted">Бэкапы не найдены. Создайте первый бэкап.</p>
+        {% endif %}
+
+        <div class="alert alert-info">
+          <h4>Важная информация:</h4>
+          <ul>
+            <li><strong>Автоматическая очистка:</strong> Система автоматически удаляет старые бэкапы, оставляя последние 10</li>
+            <li><strong>Восстановление:</strong> Перед восстановлением создается бэкап текущей базы данных</li>
+            <li><strong>Безопасность:</strong> Бэкапы содержат конфиденциальную информацию - храните их в безопасном месте</li>
+            <li><strong>Рекомендация:</strong> Создавайте бэкапы регулярно и перед важными изменениями</li>
+          </ul>
+        </div>
+
+        <div class="form-actions">
+          <a class="btn btn-secondary" href="{{ url_for('admin_dashboard') }}">Вернуться в админ-панель</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

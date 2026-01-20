@@ -1,114 +1,357 @@
 {% extends 'base.html' %}
-{% block title %}Админ — Ученики{% endblock %}
+{% block title %}Админ-панель{% endblock %}
 {% block content %}
 <div class="admin-toolbar card">
   <div class="admin-toolbar__row">
     <div class="admin-toolbar__left">
-      <h1 class="page-title mb-0">Ученики</h1>
+      <h1 class="page-title mb-0">Админ-панель</h1>
+      <div class="admin-info">
+        Пользователь: {{ session.admin_username }}
+        <span class="badge bg-{{ 'primary' if session.admin_role == 'admin' else 'success' if session.admin_role == 'deputy' else 'info' if session.admin_role == 'teacher' else 'secondary' }}">
+          {{ user_roles[session.admin_role]['name'] if user_roles and session.admin_role in user_roles else session.admin_role }}
+        </span>
+      </div>
     </div>
     <div class="admin-toolbar__right">
-      <a class="btn btn-primary" href="{{ url_for('admin_student_new') }}">Новая карточка</a>
-      <a class="btn btn-success" href="{{ url_for('admin_export_excel') }}">Экспорт всех</a>
-      <div class="dropdown">
-        <button class="btn btn-success dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-          Экспорт класса
-        </button>
-        <ul class="dropdown-menu">
-          {% for c in classes %}
-            <li><a class="dropdown-item" href="{{ url_for('admin_export_excel_class') }}?class={{ c }}">{{ c }}</a></li>
-          {% endfor %}
-        </ul>
-      </div>
-      <a class="btn btn-secondary" href="{{ url_for('admin_logout') }}">Выйти</a>
+      {% if session.admin_role == 'admin' %}
+      <a class="btn btn-warning" href="{{ url_for('admin_users') }}">Пользователи</a>
+      <a class="btn btn-info" href="{{ url_for('admin_grades') }}">Параллели</a>
+      <a class="btn btn-info" href="{{ url_for('admin_classes') }}">Классы</a>
+      <a class="btn btn-success" href="{{ url_for('admin_export_excel') }}">📊 Скачать Excel</a>
+      <a class="btn btn-info" href="{{ url_for('admin_backups') }}">Бэкапы</a>
+      {% elif session.admin_role == 'class_teacher' %}
+      <a class="btn btn-info" href="{{ url_for('admin_classes') }}">Мои классы</a>
+      <a class="btn btn-success" href="{{ url_for('admin_export_excel_by_class') }}">📊 Скачать отчеты</a>
+      {% endif %}
+      <a class="btn btn-outline-danger" href="{{ url_for('admin_logout') }}">🚪 Выйти</a>
     </div>
   </div>
 </div>
 
-<form method="get" class="filters">
-  <div class="filters__group">
-    <label class="filters__label">Поиск (ФИО)</label>
-    <input class="filters__input" type="text" name="q" value="{{ q }}" placeholder="например Иванов">
+<!-- Статистика -->
+<div class="stats-grid mb-4">
+  <div class="stat-card">
+    <div class="stat-number">{{ total_students or 0 }}</div>
+    <div class="stat-label">Всего учеников</div>
   </div>
-  <div class="filters__group">
-    <label class="filters__label">Класс</label>
-    <select class="filters__input" name="class">
-      <option value="">Все</option>
-      {% for c in classes %}
-        <option value="{{ c }}" {% if class_name==c %}selected{% endif %}>{{ c }}</option>
-      {% endfor %}
-    </select>
+  <div class="stat-card">
+    <div class="stat-number">{{ total_classes or 0 }}</div>
+    <div class="stat-label">Классов</div>
   </div>
-  <div class="filters__group">
-    <label class="filters__label">Сортировка</label>
-    <select class="filters__input" name="order">
-      <option value="">Новые сверху</option>
-      <option value="class" {% if order=='class' %}selected{% endif %}>По классу</option>
-      <option value="teacher" {% if order=='teacher' %}selected{% endif %}>По кл. руководителю</option>
-    </select>
+  <div class="stat-card">
+    <div class="stat-number">{{ active_users or 0 }}</div>
+    <div class="stat-label">Активных пользователей</div>
   </div>
-  <div class="filters__actions">
-    <button class="btn btn-primary filters__button" type="submit">Применить</button>
-  </div>
- </form>
+</div>
 
-<div class="table-responsive card">
-  <table class="table table-sm mb-0">
-    <thead>
-      <tr>
-        <th>#</th>
-        <th>ФИО</th>
-        <th>Класс</th>
-        <th>Кл. руководитель</th>
-        <th>Достижения</th>
-        <th>Создано</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for s in students %}
-      <tr>
-        <td>{{ s.id }}</td>
-        <td>
-          <div class="student-name">{{ s.full_name }}</div>
-          <div class="row-actions">
-            <a class="btn btn-small btn-secondary" href="{{ url_for('admin_student_edit', student_id=s.id) }}">Редактировать</a>
-            <form method="post" action="{{ url_for('admin_student_delete', student_id=s.id) }}" style="display:inline" onsubmit="return confirm('Удалить карточку {{ s.full_name }}?');">
-              <button type="submit" class="btn btn-small btn-danger">Удалить</button>
-            </form>
+<!-- Иерархический вид классов -->
+<div class="classes-hierarchy">
+  {% if grades %}
+    {% for grade in grades %}
+    <div class="grade-section">
+      <div class="grade-header">
+        <h3 class="grade-title">{{ grade.grade_name }}</h3>
+        <div class="grade-stats">
+          <span class="badge bg-primary">{{ grade.classes_count }} классов</span>
+          <span class="badge bg-success">{{ grade.total_students }} учеников</span>
+        </div>
+      </div>
+
+      <div class="classes-grid">
+        {% for school_class in grade.classes %}
+          <div class="class-card">
+            <div class="class-card__header">
+              <div class="class-info">
+                <h4 class="class-name">{{ school_class.class_name }}</h4>
+                {% if school_class.class_teacher %}
+                  <div class="class-teacher-info">
+                    <small>{{ school_class.class_teacher.username }}</small>
+                  </div>
+                {% else %}
+                  <div class="class-teacher-info text-warning">
+                    <small><em>Классный руководитель не назначен</em></small>
+                  </div>
+                {% endif %}
+              </div>
+              <div class="class-stats">
+                <span class="badge bg-info">{{ school_class.students }} уч.</span>
+              </div>
+            </div>
+
+            <div class="class-card__actions">
+              <a class="btn btn-sm btn-outline-primary" href="{{ url_for('admin_class_view', class_id=school_class.id) }}">
+                Просмотр
+              </a>
+              {% if session.admin_role == 'admin' or session.admin_role == 'deputy' %}
+              <a class="btn btn-sm btn-outline-success" href="{{ url_for('admin_student_new', class_id=school_class.id) }}">
+                + Ученик
+              </a>
+              {% endif %}
+              {% if session.admin_role == 'admin' %}
+              <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('admin_class_edit', class_id=school_class.id) }}">
+                Настройки
+              </a>
+              {% endif %}
+            </div>
+
+            {% if school_class.recent_students %}
+              <div class="recent-students">
+                <small class="text-muted">Последние ученики:</small>
+                <div class="student-list">
+                  {% for student in school_class.recent_students %}
+                    <div class="student-item-small">
+                      <span class="student-name">{{ student.full_name }}</span>
+                      {% if student.achievements_count > 0 %}
+                        <span class="badge badge-small bg-success">
+                          {{ student.achievements_count }}
+                        </span>
+                      {% endif %}
+                    </div>
+                  {% endfor %}
+                  {% if school_class.students > 3 %}
+                    <div class="student-item-small">
+                      <em>... и ещё {{ school_class.students - 3 }}</em>
+                    </div>
+                  {% endif %}
+                </div>
+              </div>
+            {% else %}
+              <div class="empty-class">
+                <small class="text-muted">Ученики не добавлены</small>
+              </div>
+            {% endif %}
           </div>
-        </td>
-        <td>{{ s.class_name }}</td>
-        <td>{{ s.class_teacher }}</td>
-        <td>
-          {% set achs = s.achievements | from_json %}
-          {% if achs and achs|length > 0 and achs[0]['title'] is defined %}
-          <table class="mini-ach-table">
-            <thead><tr><th>Конкурс</th><th>Уровень</th><th>Результат</th><th>Год</th><th>Дата</th></tr></thead>
-            <tbody>
-              {% for ach in achs %}
-                <tr>
-                  <td>{{ ach.title }}</td>
-                  <td>{% if ach.level=='school' %}Школьный{% elif ach.level=='district' %}Районный{% elif ach.level=='region' %}Региональный{% elif ach.level=='russia' %}Россия{% elif ach.level=='world' %}Международный{% else %}{{ ach.level }}{% endif %}</td>
-                  <td>{% if ach.result=='participant' %}Участник{% elif ach.result=='prize' %}Призёр{% elif ach.result=='winner' %}Победитель{% else %}{{ ach.result }}{% endif %}</td>
-                  <td>{{ ach.year }}</td>
-                  <td>{{ ach.date }}</td>
-                </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-          {% elif s.achievements %}
-            <div>{{ s.achievements }}</div>
-          {% endif %}
-        </td>
-        <td>{{ s.created_at.strftime('%Y-%m-%d %H:%M') if s.created_at else '' }}</td>
-      </tr>
-      {% else %}
-      <tr>
-        <td colspan="6" class="text-center text-muted">Нет записей</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
- </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+  {% else %}
+    <div class="empty-state">
+      <div class="empty-state__icon">📚</div>
+      <h3 class="empty-state__title">Параллели не созданы</h3>
+      <p class="empty-state__description">
+        Создайте параллели классов, чтобы начать управление учениками и учителями.
+      </p>
+      {% if session.admin_role == 'admin' %}
+      <a class="btn btn-primary" href="{{ url_for('admin_grades') }}">
+        Создать параллель
+      </a>
+      {% endif %}
+    </div>
+  {% endif %}
+</div>
+
+<style>
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.stat-card {
+  background: #f8f9fa;
+  border: 1px solid #e7e9f2;
+  border-radius: 8px;
+  padding: 1.5rem;
+  text-align: center;
+}
+
+.stat-number {
+  font-size: 2rem;
+  font-weight: 600;
+  color: #3d6bff;
+  margin-bottom: 0.5rem;
+}
+
+.stat-label {
+  color: #6c757d;
+  font-size: 0.9rem;
+}
+
+.classes-hierarchy {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.grade-section {
+  border: 1px solid #e7e9f2;
+  border-radius: 12px;
+  background: #fafbfc;
+  overflow: hidden;
+}
+
+.grade-header {
+  background: linear-gradient(90deg, #5b7fff, #7aa8ff);
+  color: white;
+  padding: 1rem 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.grade-title {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.grade-stats {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.classes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1rem;
+  padding: 1.5rem;
+}
+
+.class-card {
+  border: 1px solid #e7e9f2;
+  border-radius: 8px;
+  background: white;
+  overflow: hidden;
+  transition: box-shadow 0.2s;
+}
+
+.class-card:hover {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.class-card__header {
+  padding: 1rem;
+  border-bottom: 1px solid #f0f0f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.class-info {
+  flex: 1;
+}
+
+.class-name {
+  margin: 0 0 0.25rem 0;
+  color: #2d3748;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.class-teacher-info {
+  font-size: 0.85rem;
+  color: #4a5568;
+}
+
+.class-stats {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.25rem;
+}
+
+.class-card__actions {
+  padding: 0.75rem 1rem;
+  background: #f8f9fa;
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.recent-students {
+  padding: 1rem;
+  border-top: 1px solid #f0f0f0;
+}
+
+.student-list {
+  margin-top: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.student-item-small {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.85rem;
+}
+
+.student-name {
+  color: #4a5568;
+}
+
+.badge-small {
+  font-size: 0.7rem;
+  padding: 0.2rem 0.4rem;
+}
+
+.empty-class {
+  padding: 2rem 1rem;
+  text-align: center;
+  color: #6c757d;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 4rem 2rem;
+  background: #f8f9fa;
+  border: 2px dashed #dee2e6;
+  border-radius: 12px;
+}
+
+.empty-state__icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+}
+
+.empty-state__title {
+  color: #495057;
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.empty-state__description {
+  color: #6c757d;
+  margin-bottom: 2rem;
+  max-width: 400px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+@media (max-width: 768px) {
+  .classes-grid {
+    grid-template-columns: 1fr;
+    padding: 1rem;
+  }
+
+  .grade-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .class-card__header {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .class-stats {
+    align-items: flex-start;
+  }
+
+  .class-card__actions {
+    flex-direction: column;
+  }
+
+  .class-card__actions .btn {
+    width: 100%;
+  }
+}
+</style>
 {% endblock %}
 
 

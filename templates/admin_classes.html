@@ -1,0 +1,166 @@
+{% extends 'base.html' %}
+{% block title %}Управление классами{% endblock %}
+{% block content %}
+<div class="form-page">
+  <div class="form-container">
+    <div class="form-card">
+      <div class="form-card__body">
+        <h1 class="form-title">Управление классами и параллелями</h1>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="alert alert-{{ 'danger' if category == 'error' else 'success' if category == 'success' else 'warning' }}">
+                {{ message }}
+              </div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        <div class="mb-3">
+          <a class="btn btn-primary" href="{{ url_for('admin_class_new') }}">Добавить класс</a>
+          <a class="btn btn-info" href="{{ url_for('admin_grades') }}">Управление параллелями</a>
+          <a class="btn btn-secondary" href="{{ url_for('admin_dashboard') }}">Вернуться к панели</a>
+        </div>
+
+        {% if grades %}
+          {% for grade in grades %}
+            <div class="grade-section mb-4">
+              <h3 class="grade-title">{{ grade.grade_name }}</h3>
+              <div class="classes-grid">
+                {% for school_class in grade.classes %}
+                  <div class="class-card">
+                    <div class="class-card__header">
+                      <h4 class="class-card__title">{{ school_class.class_name }}</h4>
+                      <div class="class-card__actions">
+                        <a class="btn btn-sm btn-outline-primary" href="{{ url_for('admin_class_view', class_id=school_class.id) }}">
+                          Просмотр ({{ school_class.students_count }})
+                        </a>
+                        <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('admin_class_edit', class_id=school_class.id) }}">
+                          Редактировать
+                        </a>
+                      </div>
+                    </div>
+                    <div class="class-card__body">
+                      {% if school_class.class_teacher %}
+                        <div class="class-teacher">
+                          <strong>Классный руководитель:</strong><br>
+                          {{ school_class.class_teacher.username }}
+                          <span class="badge bg-info">{{ user_roles[school_class.class_teacher.role]['name'] }}</span>
+                        </div>
+                      {% else %}
+                        <div class="text-muted">
+                          <em>Классный руководитель не назначен</em>
+                        </div>
+                      {% endif %}
+                    </div>
+                  </div>
+                {% endfor %}
+              </div>
+            </div>
+          {% endfor %}
+        {% else %}
+          <div class="empty-state">
+            <div class="empty-state__icon">🏫</div>
+            <h3 class="empty-state__title">Параллели не созданы</h3>
+            <p class="empty-state__description">
+              Сначала создайте параллели классов в разделе управления параллелями.
+            </p>
+            <a class="btn btn-primary" href="{{ url_for('admin_grades') }}">
+              Создать параллель
+            </a>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.grade-section {
+  border: 1px solid #e7e9f2;
+  border-radius: 10px;
+  padding: 1.5rem;
+  background: #f8f9fa;
+}
+
+.grade-title {
+  color: #3d6bff;
+  margin-bottom: 1rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.classes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1rem;
+}
+
+.class-card {
+  border: 1px solid #e7e9f2;
+  border-radius: 8px;
+  background: white;
+  overflow: hidden;
+}
+
+.class-card__header {
+  background: #f8f9fa;
+  padding: 1rem;
+  border-bottom: 1px solid #e7e9f2;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.class-card__title {
+  margin: 0;
+  color: #2d3748;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.class-card__actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.class-card__body {
+  padding: 1rem;
+}
+
+.class-teacher {
+  color: #4a5568;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 3rem 2rem;
+  background: #f8f9fa;
+  border: 2px dashed #dee2e6;
+  border-radius: 12px;
+}
+
+.empty-state__icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.empty-state__title {
+  color: #495057;
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.empty-state__description {
+  color: #6c757d;
+  margin-bottom: 1.5rem;
+  max-width: 400px;
+  margin-left: auto;
+  margin-right: auto;
+}
+</style>
+{% endblock %}

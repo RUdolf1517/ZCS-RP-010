@@ -1,0 +1,201 @@
+{% extends 'base.html' %}
+{% block title %}Управление параллелями{% endblock %}
+{% block content %}
+
+<div class="admin-toolbar card">
+  <div class="admin-toolbar__row">
+    <div class="admin-toolbar__left">
+      <h1 class="page-title mb-0">Управление параллелями</h1>
+      <div class="page-subtitle">Создание и управление параллелями классов</div>
+    </div>
+    <div class="admin-toolbar__right">
+      <a class="btn btn-secondary" href="{{ url_for('admin_dashboard') }}">← Назад к панели</a>
+    </div>
+  </div>
+</div>
+
+<!-- Создание новой параллели -->
+<div class="card mb-4">
+  <div class="card-header">
+    <h5 class="mb-0">Создать новую параллель</h5>
+  </div>
+  <div class="card-body">
+    <form method="POST" class="row g-3 align-items-end">
+      <input type="hidden" name="action" value="create_grade">
+      <div class="col-md-3">
+        <label for="grade_number" class="form-label">Номер параллели</label>
+        <input type="number" class="form-control" id="grade_number" name="grade_number"
+               min="1" max="12" placeholder="Например: 10" required>
+      </div>
+      <div class="col-md-3">
+        <button type="submit" class="btn btn-primary">Создать параллель</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Список параллелей -->
+<div class="card">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <h5 class="mb-0">Существующие параллели</h5>
+    <span class="badge bg-primary">{{ grades|length }} параллелей</span>
+  </div>
+  <div class="card-body">
+    {% if grades %}
+      <div class="grades-grid">
+        {% for grade in grades %}
+          <div class="grade-card">
+            <div class="grade-card__header">
+              <div class="grade-info">
+                <h4 class="grade-title">{{ grade.grade_number }} классы</h4>
+                <div class="grade-stats">
+                  <span class="badge bg-info">{{ grade.classes_count }} классов</span>
+                  <span class="badge bg-success">{{ grade.total_students }} учеников</span>
+                </div>
+              </div>
+              <div class="grade-actions">
+                <a class="btn btn-sm btn-outline-primary" href="{{ url_for('admin_classes', grade_id=grade.id) }}">
+                  Управление классами
+                </a>
+                {% if grade.classes|length == 0 %}
+                  <form method="POST" class="d-inline" onsubmit="return confirm('Удалить параллель {{ grade.grade_number }} классов?')">
+                    <input type="hidden" name="action" value="delete_grade">
+                    <input type="hidden" name="grade_id" value="{{ grade.id }}">
+                    <button type="submit" class="btn btn-sm btn-outline-danger">Удалить</button>
+                  </form>
+                {% endif %}
+              </div>
+            </div>
+
+            {% if grade.classes %}
+              <div class="grade-classes">
+                <small class="text-muted">Классы:</small>
+                <div class="classes-list">
+                  {% for school_class in grade.classes %}
+                    <span class="badge bg-light text-dark">{{ school_class.class_name }}</span>
+                  {% endfor %}
+                </div>
+              </div>
+            {% else %}
+              <div class="grade-empty">
+                <small class="text-muted">Классы не созданы</small>
+              </div>
+            {% endif %}
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty-state">
+        <div class="empty-state__icon">📚</div>
+        <h3 class="empty-state__title">Параллели не созданы</h3>
+        <p class="empty-state__description">
+          Создайте первую параллель классов выше.
+        </p>
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+<style>
+.grades-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+  gap: 1rem;
+}
+
+.grade-card {
+  border: 1px solid #e7e9f2;
+  border-radius: 8px;
+  background: white;
+  overflow: hidden;
+}
+
+.grade-card__header {
+  padding: 1rem;
+  background: #f8f9fa;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.grade-info {
+  flex: 1;
+}
+
+.grade-title {
+  margin: 0 0 0.5rem 0;
+  color: #2d3748;
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.grade-stats {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.grade-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.grade-classes, .grade-empty {
+  padding: 1rem;
+  border-top: 1px solid #f0f0f0;
+}
+
+.classes-list {
+  margin-top: 0.5rem;
+  display: flex;
+  gap: 0.25rem;
+  flex-wrap: wrap;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 3rem 2rem;
+  background: #f8f9fa;
+  border: 2px dashed #dee2e6;
+  border-radius: 12px;
+}
+
+.empty-state__icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.empty-state__title {
+  color: #495057;
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.empty-state__description {
+  color: #6c757d;
+  margin-bottom: 0;
+  max-width: 400px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+@media (max-width: 768px) {
+  .grades-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .grade-card__header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .grade-actions {
+    justify-content: flex-start;
+  }
+}
+</style>
+
+{% endblock %}

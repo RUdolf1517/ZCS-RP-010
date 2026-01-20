@@ -11,6 +11,9 @@
 .form-input { display: block; width: 100%; padding: 0.5rem 0.75rem; border: 1px solid #ced4da; border-radius: 6px; }
 .form-actions { display: flex; gap: 0.5rem; margin-top: 0.5rem; }
 
+/* Пагинация */
+.pagination { margin-top: 2rem; padding: 1rem; }
+
 @media (max-width: 576px) {
   .form-grid { grid-template-columns: 1fr; }
 }
@@ -21,7 +24,11 @@ body { background: #f5f6fb; }
 .app-header { background: linear-gradient(90deg, #5b7fff, #7aa8ff); color: #fff; margin-bottom: 1.5rem; }
 .app-header__inner { display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0; }
 .app-header__brand { color: #fff; text-decoration: none; font-weight: 600; }
-.app-header__admin { color: #eef2ff; text-decoration: none; }
+.app-header__nav { display: flex; align-items: center; gap: 0.5rem; }
+.app-header__admin { color: #eef2ff; text-decoration: none; padding: 0.5rem 1rem; border-radius: 6px; transition: background-color 0.2s; font-size: 0.9rem; }
+.app-header__admin:hover { background-color: rgba(255, 255, 255, 0.1); }
+.app-header__logout { color: #fff; text-decoration: none; padding: 0.5rem 1rem; border-radius: 6px; background-color: rgba(255, 255, 255, 0.15); transition: background-color 0.2s; font-size: 0.9rem; border: 1px solid rgba(255, 255, 255, 0.2); }
+.app-header__logout:hover { background-color: rgba(255, 255, 255, 0.25); border-color: rgba(255, 255, 255, 0.3); }
 .app-footer { background: #f5f6fb; color: #000000; margin-top: 1.5rem; text-align: center;}
 .app-footer__inner { align-items: center; padding: 0.75rem 0; }
 .app-footer__copyright { color: #000000; text-decoration: none; }
@@ -86,10 +93,11 @@ table td li { margin-bottom: 0.2rem; line-height: 1.35; }
 /* Admin header */
 .admin-toolbar { padding: 0.75rem; margin-bottom: 0.75rem; }
 .admin-toolbar__row { display: flex; justify-content: space-between; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
-.admin-toolbar__left { display: flex; align-items: center; gap: 0.5rem; }
+.admin-toolbar__left { display: flex; flex-direction: column; gap: 0.25rem; }
 .admin-toolbar__right { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
 .admin-toolbar__right .btn, .admin-toolbar__right .filters__input { height: 44px; }
 .admin-toolbar__right .btn { display: inline-flex; align-items: center; }
+.admin-info { font-size: 0.9rem; color: #6b7280; }
 .export-class-form select.filters__input { padding-top: 0.5rem; padding-bottom: 0.5rem; min-width: 160px; }
 .export-class-form { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
 .row-actions { display: flex; gap: 0.4rem; margin-top: 0.25rem; }
@@ -115,6 +123,8 @@ table tbody tr:hover { background: #f9fbff; }
   .filters { grid-template-columns: 1fr; }
   .filters__actions { align-items: stretch; }
   .student-grid { grid-template-columns: 1fr; }
+  .app-header__nav { gap: 0.25rem; }
+  .app-header__admin, .app-header__logout { padding: 0.4rem 0.75rem; font-size: 0.85rem; }
 }
 
 

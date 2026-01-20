@@ -1,0 +1,188 @@
+{% extends 'base.html' %}
+{% block title %}{% if school_class %}Редактирование класса{% else %}Новый класс{% endif %}{% endblock %}
+{% block content %}
+<div class="form-page">
+  <div class="form-container">
+    <div class="form-card">
+      <div class="form-card__body">
+        <h1 class="form-title">{% if school_class %}Редактирование класса{% else %}Новый класс{% endif %}</h1>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="alert alert-{{ 'danger' if category == 'error' else 'success' if category == 'success' else 'warning' }}">
+                {{ message }}
+              </div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        <form id="main-form" method="post" class="form-grid" onsubmit="return validateClassForm()">
+          {% if not school_class %}
+          <div class="form-group">
+            <label class="form-label">Параллель *</label>
+            <select name="grade_id" class="form-input" required>
+              <option value="">Выберите параллель...</option>
+              {% for grade in grades %}
+                <option value="{{ grade.id }}">{{ grade.grade_name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Буква класса *</label>
+            <select name="class_letter" class="form-input" required>
+              <option value="">Выберите букву...</option>
+              <option value="А">А</option>
+              <option value="Б">Б</option>
+              <option value="В">В</option>
+              <option value="Г">Г</option>
+              <option value="Д">Д</option>
+              <option value="Е">Е</option>
+              <option value="Ж">Ж</option>
+              <option value="З">З</option>
+              <option value="И">И</option>
+              <option value="К">К</option>
+              <option value="Л">Л</option>
+              <option value="М">М</option>
+              <option value="Н">Н</option>
+              <option value="О">О</option>
+              <option value="П">П</option>
+              <option value="Р">Р</option>
+              <option value="С">С</option>
+              <option value="Т">Т</option>
+              <option value="У">У</option>
+              <option value="Ф">Ф</option>
+              <option value="Х">Х</option>
+              <option value="Ц">Ц</option>
+              <option value="Ч">Ч</option>
+              <option value="Ш">Ш</option>
+              <option value="Щ">Щ</option>
+              <option value="Э">Э</option>
+              <option value="Ю">Ю</option>
+              <option value="Я">Я</option>
+            </select>
+          </div>
+          {% else %}
+          <div class="form-group form-group--full">
+            <label class="form-label">Класс</label>
+            <input type="text" class="form-input" value="{{ school_class.class_name }}" readonly>
+            <small class="form-text text-muted">Название класса нельзя изменить</small>
+          </div>
+          {% endif %}
+
+          <div class="form-group form-group--full">
+            <label class="form-label">Классный руководитель</label>
+            <select name="class_teacher_id" class="form-input">
+              <option value="">Не назначен</option>
+              {% for teacher in teachers %}
+                {% if teacher.role in ['class_teacher', 'teacher', 'deputy'] %}
+                <option value="{{ teacher.id }}"
+                        {% if school_class and school_class.class_teacher_id == teacher.id %}selected{% endif %}>
+                  {{ teacher.username }} ({{ user_roles[teacher.role]['name'] }})
+                </option>
+                {% endif %}
+              {% endfor %}
+            </select>
+            <small class="form-text text-muted">
+              Классный руководитель должен иметь роль "Классный руководитель", "Учитель" или "Завуч"
+            </small>
+          </div>
+        </form>
+
+        <div class="form-actions">
+          <button class="btn btn-primary" type="submit" form="main-form">
+            {% if school_class %}Сохранить изменения{% else %}Создать класс{% endif %}
+          </button>
+          {% if school_class %}
+          <form method="post" action="{{ url_for('admin_class_delete', class_id=school_class.id) }}" style="display: inline;" onsubmit="return confirm('Удалить класс {{ school_class.class_name }}? Это действие нельзя отменить!')">
+            <button type="submit" class="btn btn-outline-danger">🗑️ Удалить класс</button>
+          </form>
+          {% endif %}
+          <a class="btn btn-secondary" href="{{ url_for('admin_classes') }}">Отмена</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Список существующих классов для проверки дубликатов
+const existingClasses = [
+{% for grade in grades %}
+  {% for school_class in grade.classes %}
+    '{{ school_class.class_name }}',
+  {% endfor %}
+{% endfor %}
+];
+
+function validateClassForm() {
+    {% if not school_class %}
+    // Проверяем только при создании нового класса
+    const gradeSelect = document.querySelector('select[name="grade_id"]');
+    const letterSelect = document.querySelector('select[name="class_letter"]');
+
+    if (gradeSelect && letterSelect) {
+        const gradeId = gradeSelect.value;
+        const letter = letterSelect.value;
+
+        if (gradeId && letter) {
+            // Находим выбранную параллель
+            const selectedGrade = {{ grades|tojson }}.find(g => g.id == gradeId);
+            if (selectedGrade) {
+                const fullClassName = selectedGrade.grade_number + letter;
+
+                if (existingClasses.includes(fullClassName)) {
+                    alert(`Класс ${fullClassName} уже существует! Выберите другую букву или удалите существующий класс.`);
+                    return false;
+                }
+            }
+        }
+    }
+    {% endif %}
+
+    return true;
+}
+
+// Дополнительная проверка при изменении полей
+{% if not school_class %}
+document.addEventListener('DOMContentLoaded', function() {
+    const letterSelect = document.querySelector('select[name="class_letter"]');
+    const gradeSelect = document.querySelector('select[name="grade_id"]');
+
+    function checkDuplicate() {
+        const gradeId = gradeSelect.value;
+        const letter = letterSelect.value;
+
+        if (gradeId && letter) {
+            const selectedGrade = {{ grades|tojson }}.find(g => g.id == gradeId);
+            if (selectedGrade) {
+                const fullClassName = selectedGrade.grade_number + letter;
+                const warningDiv = document.getElementById('duplicate-warning');
+
+                if (existingClasses.includes(fullClassName)) {
+                    if (!warningDiv) {
+                        const warning = document.createElement('div');
+                        warning.id = 'duplicate-warning';
+                        warning.className = 'alert alert-warning';
+                        warning.innerHTML = `<strong>Предупреждение:</strong> Класс ${fullClassName} уже существует!`;
+                        const form = document.getElementById('main-form');
+                        form.parentNode.insertBefore(warning, form);
+                    }
+                } else {
+                    if (warningDiv) {
+                        warningDiv.remove();
+                    }
+                }
+            }
+        }
+    }
+
+    if (letterSelect && gradeSelect) {
+        letterSelect.addEventListener('change', checkDuplicate);
+        gradeSelect.addEventListener('change', checkDuplicate);
+    }
+});
+{% endif %}
+</script>
+{% endblock %}

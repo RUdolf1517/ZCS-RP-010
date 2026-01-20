@@ -11,7 +11,12 @@
     <header class="app-header">
       <div class="app-header__inner container">
         <a class="app-header__brand" href="/">ZCS-RP-010</a>
-        <a class="app-header__admin" href="{{ url_for('admin_dashboard') }}">Админ</a>
+        <div class="app-header__nav">
+          <a class="app-header__admin" href="{{ url_for('admin_dashboard') }}">Админ</a>
+          {% if session.admin_authenticated %}
+          <a class="app-header__logout" href="{{ url_for('admin_logout') }}">Выйти</a>
+          {% endif %}
+        </div>
       </div>
     </header>
 
@@ -24,7 +29,7 @@
   <footer class="app-footer">
     <div class="app-footer__inner container">
       <div class="app-footer__copyright">
-        <p>&copy; 2025 Rudolf1517. All rights defended CC BY-NC-SA License</p>
+        <p>&copy; 2026 Rudolf1517. All rights defended CC BY-NC-SA License</p>
       </div>
     </div>
   </footer>

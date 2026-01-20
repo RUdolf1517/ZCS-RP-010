@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+{% block title %}Импорт учеников{% endblock %}
+{% block content %}
+<div class="form-page">
+  <div class="form-container">
+    <div class="form-card">
+      <div class="form-card__body">
+        <h1 class="form-title">Массовый импорт учеников из Excel</h1>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="alert alert-{{ 'danger' if category == 'error' else 'success' if category == 'success' else 'warning' }}">
+                {{ message }}
+              </div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        <div class="import-info">
+          <h3>Формат Excel файла:</h3>
+          <p>Файл должен содержать следующие столбцы (в первой строке - заголовки):</p>
+          <ol>
+            <li><strong>ФИО</strong> - Полное имя ученика (обязательно)</li>
+            <li><strong>Класс</strong> - Класс ученика, например "7А" (обязательно)</li>
+            <li><strong>Кл. руководитель</strong> - ФИО классного руководителя (обязательно)</li>
+            <li><strong>Достижения</strong> - Список достижений через точку с запятой (опционально)</li>
+          </ol>
+
+          <h4>Пример данных:</h4>
+          <table class="table table-sm table-bordered">
+            <thead>
+              <tr>
+                <th>ФИО</th>
+                <th>Класс</th>
+                <th>Кл. руководитель</th>
+                <th>Достижения</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Иванов Иван Иванович</td>
+                <td>7А</td>
+                <td>Петрова Анна Сергеевна</td>
+                <td>Олимпиада по математике; Конкурс чтецов</td>
+              </tr>
+              <tr>
+                <td>Петрова Мария Александровна</td>
+                <td>8Б</td>
+                <td>Сидоров Михаил Петрович</td>
+                <td></td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="alert alert-info">
+            <strong>Важно:</strong>
+            <ul>
+              <li>Первая строка файла должна содержать заголовки столбцов</li>
+              <li>Обязательные поля не должны быть пустыми</li>
+              <li>Ученики с одинаковым ФИО и классом будут пропущены</li>
+              <li>Достижения будут автоматически преобразованы в стандартный формат</li>
+            </ul>
+          </div>
+        </div>
+
+        <form method="post" enctype="multipart/form-data" class="form-grid">
+          <div class="form-group form-group--full">
+            <label class="form-label">Выберите Excel файл (.xlsx или .xls)</label>
+            <input type="file" name="excel_file" class="form-input" accept=".xlsx,.xls" required>
+          </div>
+
+          <div class="form-actions">
+            <button class="btn btn-primary" type="submit">Импортировать</button>
+            <a class="btn btn-secondary" href="{{ url_for('admin_dashboard') }}">Отмена</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

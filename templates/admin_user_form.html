@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+{% block title %}{% if user %}Редактирование пользователя{% else %}Новый пользователь{% endif %}{% endblock %}
+{% block content %}
+<div class="form-page">
+  <div class="form-container">
+    <div class="form-card">
+      <div class="form-card__body">
+        <h1 class="form-title">{% if user %}Редактирование пользователя{% else %}Новый пользователь{% endif %}</h1>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="alert alert-{{ 'danger' if category == 'error' else 'success' if category == 'success' else 'warning' }}">
+                {{ message }}
+              </div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        <form method="post" class="form-grid">
+          <div class="form-group">
+            <label class="form-label">Имя пользователя *</label>
+            <input type="text" name="username" class="form-input"
+                   value="{{ user.username if user }}"
+                   required {% if user %}readonly{% endif %}>
+            {% if user %}
+              <small class="form-text text-muted">Имя пользователя нельзя изменить</small>
+            {% endif %}
+          </div>
+
+          {% if not user %}
+          <div class="form-group">
+            <label class="form-label">Пароль *</label>
+            <input type="password" name="password" class="form-input" required minlength="6">
+            <small class="form-text text-muted">Минимум 6 символов</small>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Подтверждение пароля *</label>
+            <input type="password" name="confirm_password" class="form-input" required minlength="6">
+          </div>
+          {% else %}
+          <div class="form-group">
+            <label class="form-label">Новый пароль (оставьте пустым, чтобы не менять)</label>
+            <input type="password" name="password" class="form-input" minlength="6">
+            <small class="form-text text-muted">Минимум 6 символов</small>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Подтверждение нового пароля</label>
+            <input type="password" name="confirm_password" class="form-input" minlength="6">
+          </div>
+          {% endif %}
+
+          <div class="form-group">
+            <label class="form-label">Роль *</label>
+            <select name="role" class="form-input" required>
+              {% for role_key, role_info in user_roles.items() %}
+                <option value="{{ role_key }}"
+                        {% if user and user.role == role_key %}selected{% endif %}
+                        {% if role_key == 'admin' and user and user.username != 'admin' %}disabled{% endif %}>
+                  {{ role_info['name'] }} - {{ role_info['description'] }}
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          {% if user %}
+          <div class="form-group">
+            <label class="form-label">Статус</label>
+            <select name="is_active" class="form-input">
+              <option value="1" {% if user.is_active == '1' %}selected{% endif %}>Активен</option>
+              <option value="0" {% if user.is_active == '0' %}selected{% endif %}>Заблокирован</option>
+            </select>
+          </div>
+          {% endif %}
+
+          <div class="form-actions">
+            <button class="btn btn-primary" type="submit">
+              {% if user %}Сохранить изменения{% else %}Создать пользователя{% endif %}
+            </button>
+            <a class="btn btn-secondary" href="{{ url_for('admin_users') }}">Отмена</a>
+            {% if user and user.username != 'admin' %}
+              <button class="btn btn-danger" formmethod="post" formaction="{{ url_for('admin_user_delete', user_id=user.id) }}"
+                      onclick="return confirm('Удалить пользователя {{ user.username }}?');">
+                Удалить пользователя
+              </button>
+            {% endif %}
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

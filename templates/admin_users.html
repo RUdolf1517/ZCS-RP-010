@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+{% block title %}Управление пользователями{% endblock %}
+{% block content %}
+<div class="form-page">
+  <div class="form-container">
+    <div class="form-card">
+      <div class="form-card__body">
+        <h1 class="form-title">Управление пользователями</h1>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="alert alert-{{ 'danger' if category == 'error' else 'success' if category == 'success' else 'warning' }}">
+                {{ message }}
+              </div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        <div class="mb-3">
+          <a class="btn btn-primary" href="{{ url_for('admin_user_new') }}">Добавить пользователя</a>
+          <a class="btn btn-secondary" href="{{ url_for('admin_dashboard') }}">Вернуться к ученикам</a>
+        </div>
+
+        {% if users %}
+          <div class="table-responsive">
+            <table class="table table-sm">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Имя пользователя</th>
+                  <th>Роль</th>
+                  <th>Статус</th>
+                  <th>Создан</th>
+                  <th>Действия</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for user in users %}
+                  <tr>
+                    <td>{{ user.id }}</td>
+                    <td>
+                      <strong>{{ user.username }}</strong>
+                      {% if user.username == session.admin_username %}
+                        <span class="badge bg-info">Вы</span>
+                      {% endif %}
+                    </td>
+                    <td>
+                      <span class="badge bg-{{ 'primary' if user.role == 'admin' else 'success' if user.role == 'deputy' else 'info' if user.role == 'teacher' else 'secondary' }}">
+                        {{ user_roles[user.role]['name'] }}
+                      </span>
+                    </td>
+                    <td>
+                      {% if user.is_active == '1' %}
+                        <span class="badge bg-success">Активен</span>
+                      {% else %}
+                        <span class="badge bg-danger">Заблокирован</span>
+                      {% endif %}
+                    </td>
+                    <td>{{ user.created_at.strftime('%Y-%m-%d %H:%M') if user.created_at else '' }}</td>
+                    <td>
+                      <a class="btn btn-sm btn-primary" href="{{ url_for('admin_user_edit', user_id=user.id) }}">Редактировать</a>
+                      {% if user.username != session.admin_username %}
+                        <form method="post" action="{{ url_for('admin_user_delete', user_id=user.id) }}" style="display: inline;" onsubmit="return confirm('Удалить пользователя {{ user.username }}?');">
+                          <button type="submit" class="btn btn-sm btn-danger">Удалить</button>
+                        </form>
+                      {% endif %}
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <p class="text-muted">Пользователи не найдены.</p>
+        {% endif %}
+
+        <div class="mt-4">
+          <h4>Описание ролей:</h4>
+          <div class="row">
+            {% for role_key, role_info in user_roles.items() %}
+              <div class="col-md-6 mb-3">
+                <div class="card">
+                  <div class="card-body">
+                    <h5 class="card-title">{{ role_info['name'] }}</h5>
+                    <p class="card-text">{{ role_info['description'] }}</p>
+                  </div>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

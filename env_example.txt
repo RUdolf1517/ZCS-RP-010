@@ -1,0 +1,23 @@
+# Переменные окружения для приложения ZCS-RP-010
+# Скопируйте этот файл в .env и настройте значения
+
+# === БАЗА ДАННЫХ ===
+# DATABASE_URL=sqlite:///app.db
+
+# === НАСТРОЙКИ СЕРВЕРА ===
+FLASK_HOST=0.0.0.0
+FLASK_PORT=5001
+FLASK_DEBUG=True
+
+# === БЕЗОПАСНОСТЬ ===
+# ОБЯЗАТЕЛЬНО измените эти значения!
+FLASK_SECRET_KEY=your-very-secure-secret-key-here-change-this-in-production
+
+# === АДМИНИСТРАТОР ===
+# Эти переменные используются только при первом запуске для создания админа
+# После создания админа их можно удалить
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD=secure-admin-password-change-this
+
+# === ДОПОЛНИТЕЛЬНЫЕ НАСТРОЙКИ ===
+# LOG_LEVEL=INFO
